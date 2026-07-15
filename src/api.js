@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+// Get backend base URL by removing '/api' and any trailing slashes from the API URL
+export const BACKEND_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+
 const api = axios.create({
-    baseURL: 'http://localhost:8000/api/',
+    baseURL: API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`,
     headers: {
         'Content-Type': 'application/json',
     },

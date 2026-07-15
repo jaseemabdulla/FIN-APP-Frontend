@@ -11,7 +11,8 @@ import {
     deleteFundAddition, 
     createFundExpense, 
     deleteFundExpense,
-    getCategories 
+    getCategories,
+    BACKEND_URL
 } from '../api';
 
 const FundList = () => {
@@ -446,7 +447,7 @@ const FundList = () => {
                     <div className="space-y-4">
                         <h4 className="text-lg font-bold text-gray-200">Chronological Timeline</h4>
                         <div className="relative border-l border-gray-800 ml-4 pl-6 space-y-6">
-                            {selectedFund.timeline && selectedFund.timeline.map((item, idx) => (
+                            {selectedFund.timeline && selectedFund.timeline.map((item) => (
                                 <div key={item.id} className="relative group">
                                     {/* Timeline dot */}
                                     <div className="absolute -left-10 top-0.5">
@@ -493,7 +494,7 @@ const FundList = () => {
                                                 {item.attachment_url && (
                                                     <div className="mt-3">
                                                         <a 
-                                                            href={`http://localhost:8000${item.attachment_url}`} 
+                                                            href={item.attachment_url.startsWith('http') ? item.attachment_url : `${BACKEND_URL}${item.attachment_url}`} 
                                                             target="_blank" 
                                                             rel="noopener noreferrer"
                                                             className="inline-flex items-center gap-1.5 text-xs text-secondary hover:underline bg-secondary/10 px-2.5 py-1 rounded border border-secondary/20"
@@ -504,7 +505,7 @@ const FundList = () => {
                                                         {/\.(jpg|jpeg|png|webp|gif)$/i.test(item.attachment_url) && (
                                                             <div className="mt-2 rounded-lg border border-gray-805 overflow-hidden w-24 h-24 bg-black flex items-center justify-center">
                                                                 <img 
-                                                                    src={`http://localhost:8000${item.attachment_url}`} 
+                                                                    src={item.attachment_url.startsWith('http') ? item.attachment_url : `${BACKEND_URL}${item.attachment_url}`} 
                                                                     alt="receipt thumb"
                                                                     className="max-w-full max-h-full object-cover" 
                                                                 />
