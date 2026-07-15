@@ -12,6 +12,10 @@ const api = axios.create({
     },
 });
 
+console.log("Environment:", import.meta.env);
+console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
+console.log("API_BASE_URL:", API_BASE_URL);
+
 export const getTransactions = (date) => api.get(`transactions/?date=${date}`);
 export const createTransaction = (data) => api.post('transactions/', data);
 export const updateTransaction = (id, data) => api.put(`transactions/${id}/`, data);
