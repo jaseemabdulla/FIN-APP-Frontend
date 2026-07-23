@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { getDebts, deleteDebt, exportPDFReport, settlePersonDebts } from '../api';
 import TransactionForm from './TransactionForm';
 import AddDebtForm from './AddDebtForm';
@@ -8,9 +9,11 @@ const DebtList = () => {
     const [loading, setLoading] = useState(true);
     const [settlingDebt, setSettlingDebt] = useState(null);
     const [activeTab, setActiveTab] = useState('ACTIVE_PAYABLE');
+    const [highlightedDebtId, setHighlightedDebtId] = useState(null);
 
     const [showAddDebtForm, setShowAddDebtForm] = useState(false);
     const [editingDebt, setEditingDebt] = useState(null);
+    const location = useLocation();
 
     const [settlingPerson, setSettlingPerson] = useState(null);
     const [loadingSettlePerson, setLoadingSettlePerson] = useState(false);
@@ -36,6 +39,28 @@ const DebtList = () => {
     useEffect(() => {
         fetchDebts();
     }, []);
+
+    // Sync active tab & highlighted debt from URL
+    useEffect(() => {
+        if (debts.length > 0) {
+            const queryParams = new URLSearchParams(location.search);
+            const debtIdParam = queryParams.get('id');
+            if (debtIdParam) {
+                const debtId = parseInt(debtIdParam);
+                const targetDebt = debts.find(d => d.id === debtId);
+                if (targetDebt) {
+                    let tab = 'ACTIVE_PAYABLE';
+                    if (targetDebt.debt_type === 'GIVEN') {
+                        tab = targetDebt.is_cleared ? 'CLEARED_GIVEN' : 'ACTIVE_GIVEN';
+                    } else {
+                        tab = targetDebt.is_cleared ? 'CLEARED_PAYABLE' : 'ACTIVE_PAYABLE';
+                    }
+                    setActiveTab(tab);
+                    setHighlightedDebtId(debtId);
+                }
+            }
+        }
+    }, [location.search, debts]);
 
     const handleSettle = (debt) => {
         setSettlingDebt(debt);
@@ -485,6 +510,7 @@ const DebtList = () => {
                                             onEdit={handleEdit}
                                             onDelete={handleDelete}
                                             isClearedSection={isClearedSection}
+                                            highlightedDebtId={highlightedDebtId}
                                         />
                                     ))}
                                 </div>
@@ -497,17 +523,36 @@ const DebtList = () => {
     );
 };
 
-const IndividualDebtItem = ({ debt, onSettle, onEdit, onDelete }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+const IndividualDebtItem = ({ debt, onSettle, onEdit, onDelete, isHighlighted }) => {
+    const [isExpanded, setIsExpanded] = useState(isHighlighted);
+    const ref = useRef(null);
 
     const totalRepaid = parseFloat(debt.total_repaid || 0);
     const originalAmount = parseFloat(debt.amount || 0);
     const remainingAmount = parseFloat(debt.remaining_amount !== undefined ? debt.remaining_amount : (originalAmount - totalRepaid));
 
+    useEffect(() => {
+        if (isHighlighted) {
+            setIsExpanded(true);
+            if (ref.current) {
+                setTimeout(() => {
+                    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
+    }, [isHighlighted]);
+
     return (
-        <div className={`transition-all rounded-lg overflow-hidden ${
-            isExpanded ? 'bg-gray-800/60 shadow-lg border border-gray-700/50 my-2' : 'hover:bg-white/5'
-        }`}>
+        <div 
+            ref={ref}
+            className={`transition-all rounded-lg overflow-hidden ${
+                isHighlighted
+                ? 'border-2 border-primary bg-primary/20 shadow-lg shadow-primary/10 animate-pulse my-2'
+                : isExpanded 
+                    ? 'bg-gray-800/60 shadow-lg border border-gray-700/50 my-2' 
+                    : 'hover:bg-white/5'
+            }`}
+        >
             {/* Row Trigger */}
             <div 
                 onClick={() => setIsExpanded(!isExpanded)}
@@ -661,8 +706,16 @@ const IndividualDebtItem = ({ debt, onSettle, onEdit, onDelete }) => {
     );
 };
 
-const PersonDebtGroup = ({ group, onSettle, onSettleTotal, onEdit, onDelete, isClearedSection }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+const PersonDebtGroup = ({ group, onSettle, onSettleTotal, onEdit, onDelete, isClearedSection, highlightedDebtId }) => {
+    const hasHighlighted = group.debts.some(d => d.id === highlightedDebtId);
+    const [isExpanded, setIsExpanded] = useState(hasHighlighted);
+
+    useEffect(() => {
+        if (hasHighlighted) {
+            setIsExpanded(true);
+        }
+    }, [highlightedDebtId, hasHighlighted]);
+
     const outstandingColor = isClearedSection
         ? 'text-green-400'
         : (group.debts[0]?.debt_type === 'TAKEN' ? 'text-red-400' : 'text-green-400');
@@ -751,6 +804,7 @@ const PersonDebtGroup = ({ group, onSettle, onSettleTotal, onEdit, onDelete, isC
                             onEdit={onEdit}
                             onDelete={onDelete}
                             isClearedSection={isClearedSection}
+                            isHighlighted={debt.id === highlightedDebtId}
                         />
                     ))}
                 </div>

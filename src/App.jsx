@@ -7,11 +7,13 @@ import SetupScreen from './components/SetupScreen';
 import CategoryManager from './components/CategoryManager';
 import EventList from './components/EventList';
 import FundList from './components/FundList';
+import GlobalSearchModal from './components/GlobalSearchModal';
 import { checkAppInit } from './api';
 
 function App() {
   const [initialized, setInitialized] = useState(null); // null = loading
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     checkAppInit()
@@ -21,6 +23,18 @@ function App() {
         // Fallback to initialized so we can see the dashboard even if check fails
         setInitialized(true); 
       });
+  }, []);
+
+  // Listen for Ctrl+K (or Cmd+K) to open/close search modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   if (initialized === null) {
@@ -42,30 +56,46 @@ function App() {
               <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 FinanceManager
               </h1>
-              {/* Desktop links */}
-              <div className="hidden md:flex gap-6">
-                <Link to="/" className="text-gray-300 hover:text-white transition-colors">Daily</Link>
-                <Link to="/monthly" className="text-gray-300 hover:text-white transition-colors">Reports</Link>
-                <Link to="/debts" className="text-gray-300 hover:text-white transition-colors">Debts</Link>
-                <Link to="/events" className="text-gray-300 hover:text-white transition-colors">Events</Link>
-                <Link to="/funds" className="text-gray-300 hover:text-white transition-colors">Funds</Link>
-                <Link to="/categories" className="text-gray-300 hover:text-white transition-colors">Categories</Link>
-              </div>
+              
+              <div className="flex items-center gap-4">
+                {/* Desktop links */}
+                <div className="hidden md:flex gap-6">
+                  <Link to="/" className="text-gray-300 hover:text-white transition-colors">Daily</Link>
+                  <Link to="/monthly" className="text-gray-300 hover:text-white transition-colors">Reports</Link>
+                  <Link to="/debts" className="text-gray-300 hover:text-white transition-colors">Debts</Link>
+                  <Link to="/events" className="text-gray-300 hover:text-white transition-colors">Events</Link>
+                  <Link to="/funds" className="text-gray-300 hover:text-white transition-colors">Funds</Link>
+                  <Link to="/categories" className="text-gray-300 hover:text-white transition-colors">Categories</Link>
+                </div>
 
-              {/* Hamburger Button for Mobile */}
-              <button 
-                onClick={() => setIsMenuOpen(!isMenuOpen)} 
-                className="md:hidden text-gray-300 hover:text-white focus:outline-none p-1.5 rounded-lg hover:bg-gray-800 transition-colors"
-                aria-label="Toggle menu"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {isMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
+                {/* Search Button (Desktop & Mobile) */}
+                <button 
+                  onClick={() => setIsSearchOpen(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800/80 hover:bg-gray-700 border border-gray-700/60 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all cursor-pointer select-none"
+                  title="Search (Ctrl+K)"
+                >
+                  <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <span className="hidden sm:inline">Search</span>
+                  <span className="hidden md:inline text-[9px] bg-gray-950 border border-gray-800 px-1 py-0.2 rounded text-gray-500 font-mono">Ctrl K</span>
+                </button>
+
+                {/* Hamburger Button for Mobile */}
+                <button 
+                  onClick={() => setIsMenuOpen(!isMenuOpen)} 
+                  className="md:hidden text-gray-300 hover:text-white focus:outline-none p-1.5 rounded-lg hover:bg-gray-800 transition-colors"
+                  aria-label="Toggle menu"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {isMenuOpen ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    )}
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Mobile links dropdown */}
@@ -92,6 +122,9 @@ function App() {
               </div>
             )}
           </nav>
+          
+          <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+          
           <main className="py-8">
             <Routes>
               <Route path="/" element={<Dashboard />} />

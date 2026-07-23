@@ -62,5 +62,7 @@ export const createFundExpense = (data) => api.post('fund-expenses/', data, {
 });
 export const deleteFundExpense = (id) => api.delete(`fund-expenses/${id}/`);
 
+export const globalSearch = (query) => api.get(`search/?q=${query}`);
+
 export default api;
 

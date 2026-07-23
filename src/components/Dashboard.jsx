@@ -1,14 +1,28 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getDailyReport, deleteTransaction } from '../api';
 import TransactionForm from './TransactionForm';
 
 const Dashboard = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editingTransaction, setEditingTransaction] = useState(null);
+
+    // Parse query params
+    const queryParams = new URLSearchParams(location.search);
+    const highlightTxnId = queryParams.get('txnId') ? parseInt(queryParams.get('txnId')) : null;
+
+    // Sync date from URL if provided
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const dateParam = params.get('date');
+        if (dateParam && dateParam !== date) {
+            setDate(dateParam);
+        }
+    }, [location.search]);
 
     const fetchReport = useCallback(async () => {
         setLoading(true);
@@ -110,8 +124,22 @@ const Dashboard = () => {
                                             <td colSpan="6" className="px-4 py-8 text-center text-gray-500">No transactions found.</td>
                                         </tr>
                                     ) : (
-                                        report.transactions.map((txn) => (
-                                            <tr key={txn.id} className="hover:bg-gray-800/40 transition-colors">
+                                        report.transactions.map((txn) => {
+                                            const isHighlighted = txn.id === highlightTxnId;
+                                            return (
+                                                <tr 
+                                                    key={txn.id} 
+                                                    ref={el => {
+                                                        if (isHighlighted && el) {
+                                                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                        }
+                                                    }}
+                                                    className={`transition-all duration-500 ${
+                                                        isHighlighted 
+                                                        ? 'bg-primary/20 border-y border-primary hover:bg-primary/25 shadow-lg shadow-primary/10 animate-pulse' 
+                                                        : 'hover:bg-gray-800/40 transition-colors'
+                                                    }`}
+                                                >
                                                 <td className="px-4 py-3">
                                                     <span className={`px-2 py-0.5 rounded text-xs font-semibold ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
                                                         {txn.payment_mode}
@@ -143,7 +171,8 @@ const Dashboard = () => {
                                                     <button onClick={() => handleDelete(txn.id)} className="text-red-400 hover:text-red-300 text-xs uppercase font-bold tracking-wide">Delete</button>
                                                 </td>
                                             </tr>
-                                        ))
+                                        );
+                                        })
                                     )}
                                 </tbody>
                             </table>
@@ -154,8 +183,22 @@ const Dashboard = () => {
                             {report.transactions.length === 0 ? (
                                 <div className="px-4 py-8 text-center text-gray-500 text-sm">No transactions found.</div>
                             ) : (
-                                report.transactions.map((txn) => (
-                                    <div key={txn.id} className="p-4 flex flex-col gap-2.5 hover:bg-gray-800/10 transition-colors">
+                                report.transactions.map((txn) => {
+                                    const isHighlighted = txn.id === highlightTxnId;
+                                    return (
+                                        <div 
+                                            key={txn.id} 
+                                            ref={el => {
+                                                if (isHighlighted && el) {
+                                                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                }
+                                            }}
+                                            className={`p-4 flex flex-col gap-2.5 transition-all duration-500 ${
+                                                isHighlighted 
+                                                ? 'bg-primary/20 border-l-4 border-primary shadow-lg shadow-primary/10 animate-pulse font-medium' 
+                                                : 'hover:bg-gray-800/10 transition-colors'
+                                            }`}
+                                        >
                                         <div className="flex justify-between items-center">
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
                                                 {txn.payment_mode}
@@ -209,7 +252,8 @@ const Dashboard = () => {
                                             </button>
                                         </div>
                                     </div>
-                                ))
+                                );
+                                })
                             )}
                         </div>
                     </div>
