@@ -8,6 +8,7 @@ import CategoryManager from './components/CategoryManager';
 import EventList from './components/EventList';
 import FundList from './components/FundList';
 import GlobalSearchModal from './components/GlobalSearchModal';
+import LedgerManager from './components/LedgerManager';
 import { checkAppInit } from './api';
 
 function App() {
@@ -63,6 +64,7 @@ function App() {
                   <Link to="/" className="text-gray-300 hover:text-white transition-colors">Daily</Link>
                   <Link to="/monthly" className="text-gray-300 hover:text-white transition-colors">Reports</Link>
                   <Link to="/debts" className="text-gray-300 hover:text-white transition-colors">Debts</Link>
+                  <Link to="/ledgers" className="text-gray-300 hover:text-white transition-colors">Ledgers</Link>
                   <Link to="/events" className="text-gray-300 hover:text-white transition-colors">Events</Link>
                   <Link to="/funds" className="text-gray-300 hover:text-white transition-colors">Funds</Link>
                   <Link to="/categories" className="text-gray-300 hover:text-white transition-colors">Categories</Link>
@@ -110,6 +112,9 @@ function App() {
                 <Link to="/debts" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
                    🤝 Debts
                 </Link>
+                <Link to="/ledgers" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
+                   📖 Ledgers
+                </Link>
                 <Link to="/events" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
                    🎪 Events
                 </Link>
@@ -130,6 +135,7 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/monthly" element={<MonthlyReport />} />
               <Route path="/debts" element={<DebtList />} />
+              <Route path="/ledgers" element={<LedgerManager />} />
               <Route path="/events" element={<EventList />} />
               <Route path="/funds" element={<FundList />} />
               <Route path="/categories" element={<CategoryManager />} />

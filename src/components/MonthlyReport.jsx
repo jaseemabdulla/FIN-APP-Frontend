@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMonthlyReport, exportPDFReport, deleteTransaction } from '../api';
 import TransactionForm from './TransactionForm';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19A3', '#19FFD5', '#F5428D', '#42F587'];
 
@@ -20,7 +21,23 @@ const MonthlyReport = () => {
     const [expandedCategory, setExpandedCategory] = useState(null);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [prefillInvestment, setPrefillInvestment] = useState(null);
-    const [activeTab, setActiveTab] = useState('categories'); // categories, debt, audit, balances
+    const [activeTab, setActiveTab] = useState('categories'); // categories, debt, audit, comparison
+
+    // Debt log categories state
+    const [selectedDebtCategory, setSelectedDebtCategory] = useState('borrowed');
+    const [detailedTransaction, setDetailedTransaction] = useState(null);
+
+    // Monthly comparison report states
+    const currentMonthObj = { month: today.getMonth() + 1, year: today.getFullYear() };
+    const prevMonth = today.getMonth() === 0 ? 12 : today.getMonth();
+    const prevYear = today.getMonth() === 0 ? today.getFullYear() - 1 : today.getFullYear();
+    const prevMonthObj = { month: prevMonth, year: prevYear };
+
+    const [comparisonMonths, setComparisonMonths] = useState([currentMonthObj, prevMonthObj]);
+    const [comparisonResults, setComparisonResults] = useState(null);
+    const [comparisonLoading, setComparisonLoading] = useState(false);
+    const [selectedCompareMonth, setSelectedCompareMonth] = useState(today.getMonth() + 1);
+    const [selectedCompareYear, setSelectedCompareYear] = useState(today.getFullYear());
     
     const fetchReportData = useCallback(async () => {
         setLoading(true);
@@ -42,6 +59,74 @@ const MonthlyReport = () => {
             setReport(null);
         }
     }, [reportType, fetchReportData]);
+
+    const handleAddMonth = () => {
+        const exists = comparisonMonths.some(m => m.month === parseInt(selectedCompareMonth) && m.year === parseInt(selectedCompareYear));
+        if (exists) {
+            alert("This month is already added to comparison.");
+            return;
+        }
+        setComparisonMonths(prev => [...prev, { month: parseInt(selectedCompareMonth), year: parseInt(selectedCompareYear) }]);
+    };
+
+    const handleRemoveMonth = (index) => {
+        if (comparisonMonths.length <= 2) {
+            alert("You need at least two months for comparison.");
+            return;
+        }
+        setComparisonMonths(prev => prev.filter((_, idx) => idx !== index));
+    };
+
+    const fetchComparisonData = useCallback(async () => {
+        if (comparisonMonths.length < 2) return;
+        setComparisonLoading(true);
+        try {
+            const promises = comparisonMonths.map(m => getMonthlyReport(m.month, m.year));
+            const responses = await Promise.all(promises);
+            const reports = responses.map((res, index) => ({
+                month: comparisonMonths[index].month,
+                year: comparisonMonths[index].year,
+                label: `${new Date(0, comparisonMonths[index].month - 1).toLocaleString('default', { month: 'short' })} ${comparisonMonths[index].year}`,
+                report: res.data
+            }));
+            
+            const categoriesMap = {};
+            const monthLabels = reports.map(r => r.label);
+
+            reports.forEach(r => {
+                const breakdown = r.report.category_breakdown || [];
+                breakdown.forEach(cat => {
+                    if (cat.type === 'EXPENSE') {
+                        const catName = cat.category || 'Uncategorized';
+                        if (!categoriesMap[catName]) {
+                            categoriesMap[catName] = { category: catName };
+                            monthLabels.forEach(label => {
+                                categoriesMap[catName][label] = 0;
+                            });
+                        }
+                        categoriesMap[catName][r.label] = parseFloat(cat.total || 0);
+                    }
+                });
+            });
+
+            const comparisonRows = Object.values(categoriesMap);
+            setComparisonResults({
+                rows: comparisonRows,
+                months: reports,
+                monthLabels
+            });
+        } catch (err) {
+            console.error("Error fetching comparison data", err);
+        } finally {
+            setComparisonLoading(false);
+        }
+    }, [comparisonMonths]);
+
+    useEffect(() => {
+        if (activeTab === 'comparison') {
+            fetchComparisonData();
+        }
+    }, [activeTab, fetchComparisonData]);
 
     const handleEdit = (txn) => {
         if (txn.transaction_type.startsWith('FUND_MANAGEMENT')) {
@@ -296,10 +381,10 @@ const MonthlyReport = () => {
                                 🔄 Credit & Debit Audit
                             </button>
                             <button
-                                onClick={() => setActiveTab('balances')}
-                                className={`px-4 py-2 font-semibold text-sm rounded-t-lg transition-colors whitespace-nowrap ${activeTab === 'balances' ? 'bg-primary text-white font-bold border-b-2 border-primary' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+                                onClick={() => setActiveTab('comparison')}
+                                className={`px-4 py-2 font-semibold text-sm rounded-t-lg transition-colors whitespace-nowrap ${activeTab === 'comparison' ? 'bg-primary text-white font-bold border-b-2 border-primary' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
                             >
-                                🏦 Account Balances
+                                📊 Category Comparison
                             </button>
                         </div>
 
@@ -462,107 +547,147 @@ const MonthlyReport = () => {
                             <>
                                 <h3 className="text-lg sm:text-xl font-semibold mb-4 text-white">Debt & Repayments Breakdown</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                    <div className="bg-card-dark p-3.5 sm:p-4 rounded-xl border border-gray-700/60 text-center">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setSelectedDebtCategory('borrowed')}
+                                        className={`p-3.5 sm:p-4 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'borrowed' ? 'bg-green-950/20 border-green-500 shadow-md shadow-green-950/30' : 'bg-card-dark border-gray-700/60 hover:border-gray-600'}`}
+                                    >
                                         <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider mb-1">Debt Borrowed</div>
                                         <div className="text-base sm:text-xl font-bold text-green-400">+{parseFloat(report.debt_breakdown.debt_taken).toLocaleString()}</div>
-                                    </div>
-                                    <div className="bg-card-dark p-3.5 sm:p-4 rounded-xl border border-gray-700/60 text-center">
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setSelectedDebtCategory('lent')}
+                                        className={`p-3.5 sm:p-4 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'lent' ? 'bg-red-950/20 border-red-500 shadow-md shadow-red-950/30' : 'bg-card-dark border-gray-700/60 hover:border-gray-600'}`}
+                                    >
                                         <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider mb-1">Debt Lent</div>
                                         <div className="text-base sm:text-xl font-bold text-red-400">-{parseFloat(report.debt_breakdown.debt_given).toLocaleString()}</div>
-                                    </div>
-                                    <div className="bg-card-dark p-3.5 sm:p-4 rounded-xl border border-gray-700/60 text-center">
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setSelectedDebtCategory('repaid')}
+                                        className={`p-3.5 sm:p-4 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'repaid' ? 'bg-orange-950/20 border-orange-500 shadow-md shadow-orange-950/30' : 'bg-card-dark border-gray-700/60 hover:border-gray-600'}`}
+                                    >
                                         <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider mb-1">Debt Repaid</div>
                                         <div className="text-base sm:text-xl font-bold text-red-400">-{parseFloat(report.debt_breakdown.debt_taken_return).toLocaleString()}</div>
-                                    </div>
-                                    <div className="bg-card-dark p-3.5 sm:p-4 rounded-xl border border-gray-700/60 text-center">
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setSelectedDebtCategory('collected')}
+                                        className={`p-3.5 sm:p-4 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'collected' ? 'bg-emerald-950/20 border-emerald-500 shadow-md shadow-emerald-950/30' : 'bg-card-dark border-gray-700/60 hover:border-gray-600'}`}
+                                    >
                                         <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider mb-1">Debt Collected</div>
                                         <div className="text-base sm:text-xl font-bold text-green-400">+{parseFloat(report.debt_breakdown.debt_given_return).toLocaleString()}</div>
-                                    </div>
+                                    </button>
                                 </div>
 
                                 <div className="bg-card-dark rounded-xl shadow-xl border border-gray-700/50 overflow-hidden mb-8 p-3 sm:p-4">
-                                    <h4 className="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Debt Transactions Ledger</h4>
-                                    {report.debt_breakdown.transactions.length === 0 ? (
-                                        <p className="text-gray-500 text-xs py-8 text-center bg-gray-900 rounded-lg border border-gray-700 border-dashed">No debt transactions recorded for this month.</p>
-                                    ) : (
-                                        <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
-                                            {/* Desktop Table View */}
-                                            <div className="hidden md:block overflow-x-auto">
-                                                <table className="w-full text-left text-sm">
-                                                    <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
-                                                        <tr>
-                                                            <th className="px-4 py-3">Date</th>
-                                                            <th className="px-4 py-3">Type</th>
-                                                            <th className="px-4 py-3">Description / Person</th>
-                                                            <th className="px-4 py-3">Mode</th>
-                                                            <th className="px-4 py-3 text-right">Amount</th>
-                                                            <th className="px-4 py-3 text-right">Actions</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-gray-800">
-                                                        {report.debt_breakdown.transactions.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
-                                                            <tr key={txn.id} className="hover:bg-gray-800/50 transition-colors">
-                                                                <td className="px-4 py-2 text-gray-300 whitespace-nowrap">{txn.date}</td>
-                                                                <td className="px-4 py-2 font-semibold whitespace-nowrap">
-                                                                      <span className={`${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                                        {txn.transaction_type.replace('_', ' ')}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="px-4 py-2 text-gray-300 truncate max-w-[200px]" title={txn.description || 'No description'}>
-                                                                    {txn.description || <span className="text-gray-600 italic">None</span>}
-                                                                </td>
-                                                                <td className="px-4 py-2 whitespace-nowrap">
-                                                                    <span className={`px-2 py-0.5 rounded text-xs ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
-                                                                        {txn.payment_mode}
-                                                                    </span>
-                                                                </td>
-                                                                <td className={`px-4 py-2 text-right font-bold whitespace-nowrap ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                                    {parseFloat(txn.amount).toLocaleString()}
-                                                                </td>
-                                                                <td className="px-4 py-2 text-right whitespace-nowrap">
-                                                                    <button onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 mr-3 text-xs uppercase font-bold tracking-wider">Edit</button>
-                                                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs uppercase font-bold tracking-wider">Delete</button>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                    <h4 className="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+                                        Debt Transactions ({selectedDebtCategory === 'borrowed' ? 'Borrowed' : selectedDebtCategory === 'lent' ? 'Lent' : selectedDebtCategory === 'repaid' ? 'Repaid' : 'Collected'})
+                                    </h4>
+                                    {(() => {
+                                        const filteredTxns = (report.debt_breakdown.transactions || []).filter(txn => {
+                                            if (selectedDebtCategory === 'borrowed') return txn.transaction_type === 'DEBT_TAKEN';
+                                            if (selectedDebtCategory === 'lent') return txn.transaction_type === 'DEBT_GIVEN';
+                                            if (selectedDebtCategory === 'repaid') return txn.transaction_type === 'DEBT_TAKEN_RETURN';
+                                            if (selectedDebtCategory === 'collected') return txn.transaction_type === 'DEBT_GIVEN_RETURN';
+                                            return false;
+                                        });
 
-                                            {/* Mobile Card List View */}
-                                            <div className="md:hidden divide-y divide-gray-800">
-                                                {report.debt_breakdown.transactions.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
-                                                    <div key={txn.id} className="p-3.5 flex flex-col gap-2.5 hover:bg-gray-800/10 transition-colors">
-                                                        <div className="flex justify-between items-center text-xs">
-                                                            <span className="text-gray-400">{txn.date}</span>
-                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
-                                                                {txn.payment_mode}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex justify-between items-start gap-2">
-                                                            <div>
-                                                                <span className={`font-semibold block text-sm ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                                    {txn.transaction_type.replace('_', ' ')}
+                                        if (filteredTxns.length === 0) {
+                                            return (
+                                                <p className="text-gray-500 text-xs py-8 text-center bg-gray-900 rounded-lg border border-gray-700 border-dashed">
+                                                    No transactions recorded for this category.
+                                                </p>
+                                            );
+                                        }
+
+                                        return (
+                                            <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
+                                                {/* Desktop Table View */}
+                                                <div className="hidden md:block overflow-x-auto">
+                                                    <table className="w-full text-left text-sm">
+                                                        <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
+                                                            <tr>
+                                                                <th className="px-4 py-3">Date</th>
+                                                                <th className="px-4 py-3">Person (Ledger)</th>
+                                                                <th className="px-4 py-3">Description</th>
+                                                                <th className="px-4 py-3">Mode</th>
+                                                                <th className="px-4 py-3 text-right">Amount</th>
+                                                                <th className="px-4 py-3 text-right">Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-gray-800">
+                                                            {filteredTxns.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
+                                                                <tr 
+                                                                    key={txn.id} 
+                                                                    onClick={() => setDetailedTransaction(txn)}
+                                                                    className="hover:bg-gray-800/50 transition-colors cursor-pointer"
+                                                                >
+                                                                    <td className="px-4 py-2.5 text-gray-300 whitespace-nowrap">{txn.date}</td>
+                                                                    <td className="px-4 py-2.5 font-semibold text-primary whitespace-nowrap">
+                                                                        {txn.ledger_name || txn.description || <span className="text-gray-600 italic">None</span>}
+                                                                    </td>
+                                                                    <td className="px-4 py-2.5 text-gray-300 truncate max-w-[200px]" title={txn.description || 'No description'}>
+                                                                        {txn.description || <span className="text-gray-600 italic">None</span>}
+                                                                    </td>
+                                                                    <td className="px-4 py-2.5 whitespace-nowrap">
+                                                                        <span className={`px-2 py-0.5 rounded text-xs ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
+                                                                            {txn.payment_mode}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className={`px-4 py-2.5 text-right font-bold whitespace-nowrap ${['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
+                                                                        {['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? '-' : '+'}{parseFloat(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                    </td>
+                                                                    <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 mr-3 text-xs uppercase font-bold tracking-wider cursor-pointer">Edit</button>
+                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs uppercase font-bold tracking-wider cursor-pointer">Delete</button>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                {/* Mobile Card List View */}
+                                                <div className="md:hidden divide-y divide-gray-800">
+                                                    {filteredTxns.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
+                                                        <div 
+                                                            key={txn.id} 
+                                                            onClick={() => setDetailedTransaction(txn)}
+                                                            className="p-3.5 flex flex-col gap-2.5 hover:bg-gray-800/10 transition-colors cursor-pointer"
+                                                        >
+                                                            <div className="flex justify-between items-center text-xs">
+                                                                <span className="text-gray-400">{txn.date}</span>
+                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
+                                                                    {txn.payment_mode}
                                                                 </span>
-                                                                {txn.description && (
-                                                                    <p className="text-xs text-gray-300 mt-1 font-medium">{txn.description}</p>
-                                                                )}
                                                             </div>
-                                                            <div className="text-right">
-                                                                <span className={`font-bold ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                                    {parseFloat(txn.amount).toLocaleString()}
-                                                                </span>
+                                                            <div className="flex justify-between items-start gap-2">
+                                                                <div>
+                                                                    <span className="font-bold text-primary block text-sm">
+                                                                        {txn.ledger_name || txn.description || <span className="text-gray-600 italic">None</span>}
+                                                                    </span>
+                                                                    {txn.description && (
+                                                                        <p className="text-xs text-gray-300 mt-1 font-medium">{txn.description}</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <span className={`font-bold ${['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
+                                                                        {['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? '-' : '+'}{parseFloat(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex justify-end gap-4 mt-1 pt-2 border-t border-gray-800/40">
+                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 text-xs font-bold uppercase tracking-wider cursor-pointer">Edit</button>
+                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider cursor-pointer">Delete</button>
                                                             </div>
                                                         </div>
-                                                        <div className="flex justify-end gap-4 mt-1 pt-2 border-t border-gray-800/40">
-                                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 text-xs font-bold uppercase tracking-wider">Edit</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Delete</button>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        );
+                                    })()}
                                 </div>
                             </>
                         )}
@@ -622,28 +747,152 @@ const MonthlyReport = () => {
                             </>
                         )}
 
-                        {activeTab === 'balances' && (
+                        {activeTab === 'comparison' && (
                             <>
-                                <h3 className="text-lg sm:text-xl font-semibold mb-4 text-white">Remaining Account & Wallet Distribution</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                    <div className="bg-card-dark rounded-xl p-5 border border-purple-900/40 bg-gradient-to-br from-card-dark to-purple-950/5">
-                                        <h4 className="text-sm font-bold text-purple-300 uppercase tracking-wider mb-2">Total Combined Balance</h4>
-                                        <p className="text-3xl sm:text-4xl font-extrabold text-purple-400">{parseFloat(report.remaining_amount).toLocaleString()}</p>
-                                        <span className="text-[10px] text-gray-500 mt-2 block">Net funds available across cash & account wallets</span>
-                                    </div>
-
-                                    <div className="bg-card-dark rounded-xl p-5 border border-yellow-900/40 bg-gradient-to-br from-card-dark to-yellow-950/5">
-                                        <h4 className="text-sm font-bold text-yellow-300 uppercase tracking-wider mb-2">Cash In Hand</h4>
-                                        <p className="text-3xl sm:text-4xl font-extrabold text-yellow-400">{parseFloat(report.remaining_cash).toLocaleString()}</p>
-                                        <span className="text-[10px] text-gray-500 mt-2 block">Liquid physical cash balance</span>
-                                    </div>
-
-                                    <div className="bg-card-dark rounded-xl p-5 border border-blue-900/40 bg-gradient-to-br from-card-dark to-blue-950/5">
-                                        <h4 className="text-sm font-bold text-blue-300 uppercase tracking-wider mb-2">Cash In Account</h4>
-                                        <p className="text-3xl sm:text-4xl font-extrabold text-blue-400">{parseFloat(report.remaining_account).toLocaleString()}</p>
-                                        <span className="text-[10px] text-gray-500 mt-2 block">Bank and digital account balance</span>
-                                    </div>
+                                <h3 className="text-lg sm:text-xl font-semibold mb-4 text-white">Category-wise Monthly Comparison (Expenses)</h3>
+                                
+                                {/* Selected months list */}
+                                <div className="flex flex-wrap gap-2 mb-4 items-center">
+                                    <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Compared Months:</span>
+                                    {comparisonMonths.map((m, idx) => (
+                                        <div key={idx} className="flex items-center gap-1.5 bg-gray-800 border border-gray-700 rounded-full px-3 py-1 text-xs">
+                                            <span className="text-white font-medium">
+                                                {new Date(0, m.month - 1).toLocaleString('default', { month: 'short' })} {m.year}
+                                            </span>
+                                            <button 
+                                                type="button"
+                                                onClick={() => handleRemoveMonth(idx)} 
+                                                className="text-red-400 hover:text-red-300 font-bold ml-1 cursor-pointer text-xs focus:outline-none"
+                                                title="Remove month"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
+
+                                {/* Month adder controls */}
+                                <div className="flex flex-wrap gap-2.5 items-center bg-gray-850 p-3 rounded-lg border border-gray-800 mb-6 w-max max-w-full">
+                                    <div className="flex items-center gap-2">
+                                        <select 
+                                            value={selectedCompareMonth} 
+                                            onChange={(e) => setSelectedCompareMonth(parseInt(e.target.value))} 
+                                            className="bg-gray-800 text-white border border-gray-700 rounded px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer"
+                                        >
+                                            {Array.from({ length: 12 }, (_, i) => (
+                                                <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
+                                            ))}
+                                        </select>
+                                        <select 
+                                            value={selectedCompareYear} 
+                                            onChange={(e) => setSelectedCompareYear(parseInt(e.target.value))} 
+                                            className="bg-gray-800 text-white border border-gray-700 rounded px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer"
+                                        >
+                                            <option value="2025">2025</option>
+                                            <option value="2026">2026</option>
+                                        </select>
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={handleAddMonth} 
+                                        className="bg-primary hover:bg-opacity-95 text-white px-3.5 py-1.5 rounded text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0"
+                                    >
+                                        + Add Month
+                                    </button>
+                                </div>
+
+                                {comparisonLoading ? (
+                                    <div className="text-center py-12">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+                                        <p className="text-gray-400 text-xs">Loading comparison data...</p>
+                                    </div>
+                                ) : comparisonResults ? (
+                                    <>
+                                        {/* Table view */}
+                                        <div className="bg-card-dark rounded-xl shadow-xl border border-gray-700/50 overflow-hidden mb-8">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left text-sm">
+                                                    <thead className="bg-gray-800 text-gray-400 uppercase text-[10px] sm:text-xs tracking-wider">
+                                                        <tr>
+                                                            <th className="px-5 py-3.5">Category</th>
+                                                            {comparisonResults.monthLabels.map((label, idx) => (
+                                                                <th key={idx} className="px-5 py-3.5 text-right">{label}</th>
+                                                            ))}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-gray-800">
+                                                        {comparisonResults.rows.length === 0 ? (
+                                                            <tr>
+                                                                <td colSpan={comparisonResults.monthLabels.length + 1} className="px-5 py-8 text-center text-gray-500 italic">
+                                                                    No expenses recorded in the compared months.
+                                                                </td>
+                                                            </tr>
+                                                        ) : (
+                                                            <>
+                                                                {comparisonResults.rows.map((row, idx) => (
+                                                                    <tr key={idx} className="hover:bg-gray-800/40 transition-colors">
+                                                                        <td className="px-5 py-3 font-semibold text-gray-300">{row.category}</td>
+                                                                        {comparisonResults.monthLabels.map((label, lIdx) => (
+                                                                            <td key={lIdx} className="px-5 py-3 text-right font-mono text-gray-300">
+                                                                                {row[label] > 0 ? `₹${row[label].toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                                                                            </td>
+                                                                        ))}
+                                                                    </tr>
+                                                                ))}
+                                                                {/* Totals Row */}
+                                                                <tr className="bg-gray-800/30 border-t-2 border-gray-700 font-bold text-white">
+                                                                    <td className="px-5 py-4 uppercase text-xs tracking-wider">Total Expenses</td>
+                                                                    {comparisonResults.monthLabels.map((label, idx) => {
+                                                                        const totalVal = comparisonResults.rows.reduce((sum, r) => sum + (r[label] || 0), 0);
+                                                                        return (
+                                                                            <td key={idx} className="px-5 py-4 text-right font-mono text-base text-secondary">
+                                                                                ₹{totalVal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                            </td>
+                                                                        );
+                                                                    })}
+                                                                </tr>
+                                                            </>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        {/* Chart visualization */}
+                                        {comparisonResults.rows.length > 0 && (
+                                            <div className="bg-card-dark p-5 rounded-xl border border-gray-700/50 shadow-xl mb-8">
+                                                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Spending Trends by Category</h4>
+                                                <div className="w-full h-80 sm:h-96">
+                                                    <ResponsiveContainer width="100%" height="100%">
+                                                        <BarChart
+                                                            data={comparisonResults.rows}
+                                                            margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
+                                                        >
+                                                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                                            <XAxis dataKey="category" stroke="#9ca3af" fontSize={11} tickLine={false} />
+                                                            <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} tickFormatter={(val) => `₹${val}`} />
+                                                            <Tooltip 
+                                                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '8px' }}
+                                                                itemStyle={{ color: '#fff', fontSize: '12px' }}
+                                                                labelStyle={{ color: '#9ca3af', fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}
+                                                                formatter={(value) => [`₹${parseFloat(value).toLocaleString()}`, '']}
+                                                            />
+                                                            <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+                                                            {comparisonResults.monthLabels.map((label, idx) => (
+                                                                <Bar 
+                                                                    key={idx} 
+                                                                    dataKey={label} 
+                                                                    fill={COLORS[idx % COLORS.length]} 
+                                                                    radius={[4, 4, 0, 0]} 
+                                                                />
+                                                            ))}
+                                                        </BarChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : null}
                             </>
                         )}
                     </div>
@@ -685,6 +934,73 @@ const MonthlyReport = () => {
                             onCancelInvestment={() => setPrefillInvestment(null)}
                             selectedDate={getLastDateOfMonth()}
                         />
+                    </div>
+                </div>
+            )}
+
+            {/* Detailed Transaction Modal */}
+            {detailedTransaction && (
+                <div className="fixed inset-0 bg-black/75 overflow-y-auto flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-card-dark border border-gray-700 rounded-xl p-6 w-full max-w-lg shadow-2xl relative">
+                        <button 
+                            type="button"
+                            onClick={() => setDetailedTransaction(null)} 
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold font-sans cursor-pointer focus:outline-none"
+                        >
+                            ×
+                        </button>
+                        <h3 className="text-xl font-bold text-secondary mb-4 flex items-center gap-2 border-b border-gray-800 pb-2">
+                            🤝 Debt Transaction Details
+                        </h3>
+                        
+                        <div className="space-y-4 text-sm">
+                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-800/40">
+                                <span className="text-gray-400 font-medium">Date:</span>
+                                <span className="col-span-2 text-white font-semibold">{detailedTransaction.date}</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-800/40">
+                                <span className="text-gray-400 font-medium">Type:</span>
+                                <span className={`col-span-2 font-bold ${['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(detailedTransaction.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
+                                    {detailedTransaction.transaction_type.replace(/_/g, ' ')}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-800/40">
+                                <span className="text-gray-400 font-medium">Amount:</span>
+                                <span className="col-span-2 text-white font-bold text-base font-mono">
+                                    ₹{parseFloat(detailedTransaction.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-800/40">
+                                <span className="text-gray-400 font-medium">Person (Ledger):</span>
+                                <span className="col-span-2 text-primary font-bold">
+                                    {detailedTransaction.ledger_name || detailedTransaction.description || 'No linked ledger'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-800/40">
+                                <span className="text-gray-400 font-medium">Payment Mode:</span>
+                                <span className="col-span-2">
+                                    <span className={`px-2.5 py-0.5 rounded text-xs font-bold ${detailedTransaction.payment_mode === 'CASH' ? 'bg-yellow-900/60 text-yellow-200 border border-yellow-800/40' : 'bg-blue-900/60 text-blue-200 border border-blue-800/40'}`}>
+                                        {detailedTransaction.payment_mode}
+                                    </span>
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 py-2">
+                                <span className="text-gray-400 font-medium">Description:</span>
+                                <span className="col-span-2 text-gray-200 bg-gray-900/50 p-2.5 rounded border border-gray-800/60 whitespace-pre-wrap font-sans text-xs">
+                                    {detailedTransaction.description || <span className="text-gray-500 italic">None</span>}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-6 flex justify-end">
+                            <button 
+                                type="button"
+                                onClick={() => setDetailedTransaction(null)} 
+                                className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors cursor-pointer"
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

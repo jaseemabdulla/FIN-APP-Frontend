@@ -30,6 +30,10 @@ export const createDebt = (data) => api.post('debts/', data);
 export const updateDebt = (id, data) => api.put(`debts/${id}/`, data);
 export const deleteDebt = (id) => api.delete(`debts/${id}/`);
 export const settlePersonDebts = (data) => api.post('debts/settle-person/', data);
+export const getLedgers = () => api.get('ledgers/');
+export const createLedger = (data) => api.post('ledgers/', data);
+export const updateLedger = (id, data) => api.put(`ledgers/${id}/`, data);
+export const deleteLedger = (id) => api.delete(`ledgers/${id}/`);
 export const checkAppInit = () => api.get('init/');
 export const initializeApp = (data) => api.post('init/', data);
 
