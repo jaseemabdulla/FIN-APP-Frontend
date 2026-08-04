@@ -6,6 +6,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19A3', '#19FFD5', '#F5428D', '#42F587'];
 
+const formatTransactionType = (type) => {
+    if (!type) return 'Unknown';
+    return type
+        .toLowerCase()
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
+
 const MonthlyReport = () => {
     const navigate = useNavigate();
     const today = new Date();
@@ -397,147 +406,158 @@ const MonthlyReport = () => {
                                             <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                                                 <p>No data available for this month.</p>
                                             </div>
-                                        ) : (
-                                            <ul className="space-y-4">
-                                                {report.category_breakdown.map((cat, idx) => {
-                                                    const isExpanded = expandedCategory === cat.category;
-                                                    return (
-                                                        <li key={idx} className={`group flex flex-col p-4 sm:p-5 rounded-xl border border-gray-700/50 transition-all ${isExpanded ? 'bg-gray-800 border-primary shadow-lg ring-1 ring-primary/50' : 'bg-gray-800/80 hover:bg-gray-800 hover:border-gray-600 hover:shadow-lg'}`}>
-                                                            <div className="flex justify-between items-center w-full cursor-pointer gap-2" onClick={() => setExpandedCategory(isExpanded ? null : cat.category)}>
-                                                                <div className="flex items-center gap-3 min-w-0">
-                                                                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold bg-gray-900 shrink-0" style={{ color: COLORS[idx % COLORS.length] }}>
-                                                                        {cat.category.charAt(0).toUpperCase()}
-                                                                    </div>
-                                                                    <div className="min-w-0">
-                                                                        <div className="font-bold text-sm sm:text-base text-white flex items-center gap-2 truncate">
-                                                                            <span className="truncate">{cat.category}</span>
-                                                                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${cat.type === 'INCOME' ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}`}>{cat.type}</span>
-                                                                        </div>
-                                                                        <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-2 mt-0.5">
-                                                                            <button 
-                                                                                onClick={(e) => { e.stopPropagation(); setExpandedCategory(isExpanded ? null : cat.category); }}
-                                                                                className="text-blue-400 hover:text-blue-300 underline font-medium"
-                                                                            >
-                                                                                {isExpanded ? 'Hide' : `View ${cat.transactions?.length || 0} txns`}
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
+                                        ) : (() => {
+                                            // Group categories by type
+                                            const groupedCategories = {};
+                                            report.category_breakdown.forEach(cat => {
+                                                const type = cat.type || 'UNKNOWN';
+                                                if (!groupedCategories[type]) {
+                                                    groupedCategories[type] = [];
+                                                }
+                                                groupedCategories[type].push(cat);
+                                            });
+
+                                            return (
+                                                <div className="space-y-8">
+                                                    {Object.keys(groupedCategories).sort().map(type => {
+                                                        const categoriesOfType = groupedCategories[type];
+                                                        const totalForType = categoriesOfType.reduce((sum, c) => sum + parseFloat(c.total || 0), 0);
+
+                                                        return (
+                                                            <div key={type} className="mb-6 last:mb-0">
+                                                                <div className="flex justify-between items-center border-b border-gray-800 pb-2 mb-4">
+                                                                    <h4 className="text-sm font-bold text-secondary uppercase tracking-wider">
+                                                                        {formatTransactionType(type)}
+                                                                    </h4>
+                                                                    <span className="text-xs text-gray-400 font-semibold font-mono">
+                                                                        Total: ₹{totalForType.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                    </span>
                                                                 </div>
 
-                                                                <div className="text-right shrink-0">
-                                                                    <span className="block text-[9px] text-gray-500 font-bold uppercase tracking-wider">Total</span>
-                                                                    <span className="text-sm sm:text-base font-bold text-red-400">{parseFloat(cat.total).toLocaleString()}</span>
-                                                                </div>
-                                                            </div>
+                                                                <ul className="space-y-4">
+                                                                    {categoriesOfType.map((cat, idx) => {
+                                                                        const catKey = `${type}-${cat.category}`;
+                                                                        const isExpanded = expandedCategory === catKey;
 
-                                                            {/* Transactions List Dropdown */}
-                                                            {isExpanded && cat.transactions && (
-                                                                <div className="mt-5 pt-4 border-t border-gray-700/50 animate-fade-in w-full">
-                                                                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Category Transactions</h4>
-                                                                    {cat.transactions.length === 0 ? (
-                                                                        <p className="text-gray-500 text-xs py-4 text-center bg-gray-900 rounded-lg border border-gray-700 border-dashed">No transactions.</p>
-                                                                    ) : (
-                                                                        <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
-                                                                            {/* Desktop Table View */}
-                                                                            <div className="hidden md:block overflow-x-auto">
-                                                                                <table className="w-full text-left text-sm">
-                                                                                    <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
-                                                                                        <tr>
-                                                                                            <th className="px-4 py-3">Date</th>
-                                                                                            <th className="px-4 py-3">Type</th>
-                                                                                            <th className="px-4 py-3">Description</th>
-                                                                                            <th className="px-4 py-3">Mode</th>
-                                                                                            <th className="px-4 py-3 text-right">Amount</th>
-                                                                                            <th className="px-4 py-3 text-right">Actions</th>
-                                                                                        </tr>
-                                                                                    </thead>
-                                                                                    <tbody className="divide-y divide-gray-800">
-                                                                                        {cat.transactions.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
-                                                                                            <tr key={txn.id} className="hover:bg-gray-800/50 transition-colors">
-                                                                                                <td className="px-4 py-2 text-gray-300 whitespace-nowrap">{txn.date}</td>
-                                                                                                <td className="px-4 py-2 font-semibold whitespace-nowrap">
-                                                                                                      <span className={`${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN', 'FUND_MANAGEMENT_DEC'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                                                                        {txn.transaction_type.startsWith('FUND_MANAGEMENT') ? 'Fund Management' : txn.transaction_type.replace('_', ' ')}
-                                                                                                    </span>
-                                                                                                </td>
-                                                                                                <td className="px-4 py-2 text-gray-300 truncate max-w-[200px]" title={txn.description || 'No description'}>
-                                                                                                    {txn.description || <span className="text-gray-600 italic">None</span>}
-                                                                                                    {txn.related_fund && (
-                                                                                                        <span 
-                                                                                                            onClick={() => navigate(`/funds?id=${txn.related_fund}`)}
-                                                                                                            className="block text-[9px] text-secondary hover:text-emerald-300 font-bold bg-secondary/10 border border-secondary/20 px-1 py-0.5 rounded w-max mt-0.5 cursor-pointer"
-                                                                                                        >
-                                                                                                            💰 Fund: {txn.related_fund_title}
-                                                                                                        </span>
-                                                                                                    )}
-                                                                                                </td>
-                                                                                                <td className="px-4 py-2 whitespace-nowrap">
-                                                                                                    <span className={`px-2 py-0.5 rounded text-xs ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
-                                                                                                        {txn.payment_mode}
-                                                                                                    </span>
-                                                                                                </td>
-                                                                                                <td className={`px-4 py-2 text-right font-bold whitespace-nowrap ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN', 'FUND_MANAGEMENT_DEC'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                                                                    {['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN', 'FUND_MANAGEMENT_DEC'].includes(txn.transaction_type) ? '-' : '+'}{parseFloat(txn.amount).toLocaleString()}
-                                                                                                </td>
-                                                                                                <td className="px-4 py-2 text-right whitespace-nowrap">
-                                                                                                    <button onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 mr-3 text-xs uppercase font-bold tracking-wider">Edit</button>
-                                                                                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs uppercase font-bold tracking-wider">Delete</button>
-                                                                                                </td>
-                                                                                            </tr>
-                                                                                        ))}
-                                                                                    </tbody>
-                                                                                </table>
-                                                                            </div>
-
-                                                                            {/* Mobile Card List View */}
-                                                                            <div className="md:hidden divide-y divide-gray-800">
-                                                                                {cat.transactions.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
-                                                                                    <div key={txn.id} className="p-3.5 flex flex-col gap-2 hover:bg-gray-800/10 transition-colors">
-                                                                                        <div className="flex justify-between items-center text-xs">
-                                                                                            <span className="text-gray-400">{txn.date}</span>
-                                                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
-                                                                                                {txn.payment_mode}
-                                                                                            </span>
+                                                                        return (
+                                                                            <li key={catKey} className={`group flex flex-col p-4 sm:p-5 rounded-xl border border-gray-700/50 transition-all ${isExpanded ? 'bg-gray-800 border-primary shadow-lg ring-1 ring-primary/50' : 'bg-gray-800/80 hover:bg-gray-800 hover:border-gray-600 hover:shadow-lg'}`}>
+                                                                                <div className="flex justify-between items-center w-full cursor-pointer gap-2" onClick={() => setExpandedCategory(isExpanded ? null : catKey)}>
+                                                                                    <div className="flex items-center gap-3 min-w-0">
+                                                                                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold bg-gray-900 shrink-0" style={{ color: COLORS[idx % COLORS.length] }}>
+                                                                                            {cat.category.charAt(0).toUpperCase()}
                                                                                         </div>
-                                                                                                <div className="flex justify-between items-start gap-2">
-                                                                                                    <div>
-                                                                                                        <span className={`font-semibold block text-sm ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN', 'FUND_MANAGEMENT_DEC'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                                                                            {txn.transaction_type.startsWith('FUND_MANAGEMENT') ? 'Fund Management' : txn.transaction_type.replace('_', ' ')}
-                                                                                                        </span>
-                                                                                                        {txn.description && (
-                                                                                                            <p className="text-xs text-gray-300 mt-1 font-medium">{txn.description}</p>
-                                                                                                        )}
-                                                                                                        {txn.related_fund && (
-                                                                                                            <span 
-                                                                                                                onClick={() => navigate(`/funds?id=${txn.related_fund}`)}
-                                                                                                                className="inline-block text-[9px] text-secondary hover:text-emerald-300 font-bold bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded mt-1 cursor-pointer"
-                                                                                                            >
-                                                                                                                💰 Fund: {txn.related_fund_title}
-                                                                                                            </span>
-                                                                                                        )}
-                                                                                                    </div>
-                                                                                                    <div className="text-right">
-                                                                                                        <span className={`font-bold ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN', 'FUND_MANAGEMENT_DEC'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                                                                            {['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN', 'FUND_MANAGEMENT_DEC'].includes(txn.transaction_type) ? '-' : '+'}{parseFloat(txn.amount).toLocaleString()}
-                                                                                                        </span>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                        <div className="flex justify-end gap-4 mt-1 pt-2 border-t border-gray-800/40">
-                                                                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 text-xs font-bold uppercase tracking-wider">Edit</button>
-                                                                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Delete</button>
+                                                                                        <div className="min-w-0">
+                                                                                            <div className="font-bold text-sm sm:text-base text-white flex items-center gap-2 truncate">
+                                                                                                <span className="truncate">{cat.category}</span>
+                                                                                            </div>
+                                                                                            <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                                                                                                <button 
+                                                                                                    type="button"
+                                                                                                    onClick={(e) => { e.stopPropagation(); setExpandedCategory(isExpanded ? null : catKey); }}
+                                                                                                    className="text-blue-400 hover:text-blue-300 underline font-medium cursor-pointer"
+                                                                                                >
+                                                                                                    {isExpanded ? 'Hide' : `View ${cat.transactions?.length || 0} txns`}
+                                                                                                </button>
+                                                                                            </div>
                                                                                         </div>
                                                                                     </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </li>
-                                                    );
-                                                })}
-                                            </ul>
-                                        )}
+
+                                                                                    <div className="text-right shrink-0">
+                                                                                        <span className="block text-[9px] text-gray-500 font-bold uppercase tracking-wider">Total</span>
+                                                                                        <span className="text-sm sm:text-base font-bold text-white font-mono">
+                                                                                            ₹{parseFloat(cat.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                {/* Transactions List Dropdown */}
+                                                                                {isExpanded && cat.transactions && (
+                                                                                    <div className="mt-5 pt-4 border-t border-gray-700/50 animate-fade-in w-full">
+                                                                                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Category Transactions</h4>
+                                                                                        {cat.transactions.length === 0 ? (
+                                                                                            <p className="text-gray-500 text-xs py-4 text-center bg-gray-900 rounded-lg border border-gray-700 border-dashed">No transactions.</p>
+                                                                                        ) : (
+                                                                                            <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
+                                                                                                {/* Desktop Table View */}
+                                                                                                <div className="hidden md:block overflow-x-auto">
+                                                                                                    <table className="w-full text-left text-sm">
+                                                                                                        <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
+                                                                                                            <tr>
+                                                                                                                <th className="px-4 py-3">Date</th>
+                                                                                                                <th className="px-4 py-3">Description</th>
+                                                                                                                <th className="px-4 py-3">Mode</th>
+                                                                                                                <th className="px-4 py-3 text-right">Amount</th>
+                                                                                                                <th className="px-4 py-3 text-right">Actions</th>
+                                                                                                            </tr>
+                                                                                                        </thead>
+                                                                                                        <tbody className="divide-y divide-gray-800">
+                                                                                                            {cat.transactions.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
+                                                                                                                <tr key={txn.id} className="hover:bg-gray-800/50 transition-colors">
+                                                                                                                    <td className="px-4 py-2.5 text-gray-300 whitespace-nowrap">{txn.date}</td>
+                                                                                                                    <td className="px-4 py-2.5 text-gray-300 truncate max-w-[200px]" title={txn.description || 'No description'}>
+                                                                                                                        {txn.description || <span className="text-gray-600 italic">None</span>}
+                                                                                                                    </td>
+                                                                                                                    <td className="px-4 py-2.5 whitespace-nowrap">
+                                                                                                                        <span className={`px-2 py-0.5 rounded text-xs ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
+                                                                                                                            {txn.payment_mode}
+                                                                                                                        </span>
+                                                                                                                    </td>
+                                                                                                                    <td className="px-4 py-2.5 text-right font-bold font-mono whitespace-nowrap text-white">
+                                                                                                                        ₹{parseFloat(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                                                                    </td>
+                                                                                                                    <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                                                                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 mr-3 text-xs uppercase font-bold tracking-wider cursor-pointer">Edit</button>
+                                                                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs uppercase font-bold tracking-wider cursor-pointer">Delete</button>
+                                                                                                                    </td>
+                                                                                                                </tr>
+                                                                                                            ))}
+                                                                                                        </tbody>
+                                                                                                    </table>
+                                                                                                </div>
+
+                                                                                                {/* Mobile Card List View */}
+                                                                                                <div className="md:hidden divide-y divide-gray-800">
+                                                                                                    {cat.transactions.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
+                                                                                                        <div key={txn.id} className="p-3.5 flex flex-col gap-2 hover:bg-gray-800/10 transition-colors">
+                                                                                                            <div className="flex justify-between items-center text-xs">
+                                                                                                                <span className="text-gray-400">{txn.date}</span>
+                                                                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
+                                                                                                                    {txn.payment_mode}
+                                                                                                                </span>
+                                                                                                            </div>
+                                                                                                            <div className="flex justify-between items-start gap-2">
+                                                                                                                <div>
+                                                                                                                    {txn.description && (
+                                                                                                                        <p className="text-xs text-gray-300 mt-1 font-medium">{txn.description}</p>
+                                                                                                                    )}
+                                                                                                                </div>
+                                                                                                                <div className="text-right">
+                                                                                                                    <span className="font-bold text-white font-mono">
+                                                                                                                        ₹{parseFloat(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                                                                    </span>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                            <div className="flex justify-end gap-4 mt-1 pt-2 border-t border-gray-800/40">
+                                                                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 text-xs font-bold uppercase tracking-wider cursor-pointer">Edit</button>
+                                                                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider cursor-pointer">Delete</button>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )}
+                                                                            </li>
+                                                                        );
+                                                                    })}
+                                                                </ul>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </>
