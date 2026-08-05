@@ -60,7 +60,7 @@ const SetupScreen = ({ onComplete }) => {
                                 value={formData.cash_balance}
                                 onChange={handleChange}
                                 placeholder="0"
-                                className="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 pl-8 pr-4 text-white placeholder-gray-600 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                className="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 pl-8 pr-4 text-white placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                             />
                         </div>
                     </div>
@@ -75,7 +75,7 @@ const SetupScreen = ({ onComplete }) => {
                                 value={formData.account_balance}
                                 onChange={handleChange}
                                 placeholder="0"
-                                className="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 pl-8 pr-4 text-white placeholder-gray-600 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                className="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 pl-8 pr-4 text-white placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                             />
                         </div>
                     </div>

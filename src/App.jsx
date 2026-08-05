@@ -3,28 +3,20 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import MonthlyReport from './components/MonthlyReport';
 import DebtList from './components/DebtList';
-import SetupScreen from './components/SetupScreen';
 import CategoryManager from './components/CategoryManager';
 import EventList from './components/EventList';
 import FundList from './components/FundList';
 import GlobalSearchModal from './components/GlobalSearchModal';
 import LedgerManager from './components/LedgerManager';
-import { checkAppInit } from './api';
+import Login from './components/Login';
+import Register from './components/Register';
+import ProtectedRoute from './components/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
 
 function App() {
-  const [initialized, setInitialized] = useState(null); // null = loading
+  const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-
-  useEffect(() => {
-    checkAppInit()
-      .then(res => setInitialized(res.data.initialized))
-      .catch(err => {
-        console.error("Failed to check init status", err);
-        // Fallback to initialized so we can see the dashboard even if check fails
-        setInitialized(true); 
-      });
-  }, []);
 
   // Listen for Ctrl+K (or Cmd+K) to open/close search modal
   useEffect(() => {
@@ -38,29 +30,19 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  if (initialized === null) {
-      return (
-        <div className="min-h-screen bg-bg-dark flex items-center justify-center text-primary">
-            <div className="animate-pulse">Loading FinanceManager...</div>
-        </div>
-      );
-  }
-
   return (
     <BrowserRouter>
-      {!initialized ? (
-        <SetupScreen onComplete={() => setInitialized(true)} />
-      ) : (
-        <div className="min-h-screen bg-bg-dark text-white font-sans">
-          <nav className="border-b border-gray-800 bg-card-dark sticky top-0 z-50">
-            <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                FinanceManager
-              </h1>
-              
+      <div className="min-h-screen bg-bg-dark text-white font-sans">
+        <nav className="border-b border-gray-800 bg-card-dark sticky top-0 z-50">
+          <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              FinanceManager
+            </h1>
+            
+            {user && (
               <div className="flex items-center gap-4">
                 {/* Desktop links */}
-                <div className="hidden md:flex gap-6">
+                <div className="hidden md:flex gap-6 items-center">
                   <Link to="/" className="text-gray-300 hover:text-white transition-colors">Daily</Link>
                   <Link to="/monthly" className="text-gray-300 hover:text-white transition-colors">Reports</Link>
                   <Link to="/debts" className="text-gray-300 hover:text-white transition-colors">Debts</Link>
@@ -68,6 +50,12 @@ function App() {
                   <Link to="/events" className="text-gray-300 hover:text-white transition-colors">Events</Link>
                   <Link to="/funds" className="text-gray-300 hover:text-white transition-colors">Funds</Link>
                   <Link to="/categories" className="text-gray-300 hover:text-white transition-colors">Categories</Link>
+                  <button 
+                    onClick={logout}
+                    className="text-error hover:text-red-400 font-semibold transition-colors cursor-pointer"
+                  >
+                    Logout
+                  </button>
                 </div>
 
                 {/* Search Button (Desktop & Mobile) */}
@@ -98,51 +86,59 @@ function App() {
                   </svg>
                 </button>
               </div>
-            </div>
-
-            {/* Mobile links dropdown */}
-            {isMenuOpen && (
-              <div className="md:hidden border-t border-gray-800/60 bg-card-dark px-4 py-3 flex flex-col gap-3 shadow-2xl animate-fade-in">
-                <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
-                   📅 Daily
-                </Link>
-                <Link to="/monthly" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
-                   📈 Reports
-                </Link>
-                <Link to="/debts" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
-                   🤝 Debts
-                </Link>
-                <Link to="/ledgers" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
-                   📖 Ledgers
-                </Link>
-                <Link to="/events" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
-                   🎪 Events
-                </Link>
-                <Link to="/funds" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
-                   💰 Funds
-                </Link>
-                <Link to="/categories" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
-                   🏷️ Categories
-                </Link>
-              </div>
             )}
-          </nav>
-          
-          <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-          
-          <main className="py-8">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/monthly" element={<MonthlyReport />} />
-              <Route path="/debts" element={<DebtList />} />
-              <Route path="/ledgers" element={<LedgerManager />} />
-              <Route path="/events" element={<EventList />} />
-              <Route path="/funds" element={<FundList />} />
-              <Route path="/categories" element={<CategoryManager />} />
-            </Routes>
-          </main>
-        </div>
-      )}
+          </div>
+
+          {/* Mobile links dropdown */}
+          {user && isMenuOpen && (
+            <div className="md:hidden border-t border-gray-800/60 bg-card-dark px-4 py-3 flex flex-col gap-3 shadow-2xl animate-fade-in">
+              <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
+                 📅 Daily
+              </Link>
+              <Link to="/monthly" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
+                 📈 Reports
+              </Link>
+              <Link to="/debts" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
+                 🤝 Debts
+              </Link>
+              <Link to="/ledgers" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
+                 📖 Ledgers
+              </Link>
+              <Link to="/events" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
+                 🎪 Events
+              </Link>
+              <Link to="/funds" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
+                 💰 Funds
+              </Link>
+              <Link to="/categories" onClick={() => setIsMenuOpen(false)} className="text-gray-300 hover:text-white transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5">
+                 🏷️ Categories
+              </Link>
+              <button 
+                onClick={() => { logout(); setIsMenuOpen(false); }}
+                className="text-error hover:text-red-400 text-left transition-colors py-2 px-2 rounded hover:bg-gray-800 text-sm font-semibold tracking-wide flex items-center gap-2.5 cursor-pointer w-full"
+              >
+                 🚪 Logout
+              </button>
+            </div>
+          )}
+        </nav>
+        
+        {user && <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />}
+        
+        <main className="py-8">
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/monthly" element={<ProtectedRoute><MonthlyReport /></ProtectedRoute>} />
+            <Route path="/debts" element={<ProtectedRoute><DebtList /></ProtectedRoute>} />
+            <Route path="/ledgers" element={<ProtectedRoute><LedgerManager /></ProtectedRoute>} />
+            <Route path="/events" element={<ProtectedRoute><EventList /></ProtectedRoute>} />
+            <Route path="/funds" element={<ProtectedRoute><FundList /></ProtectedRoute>} />
+            <Route path="/categories" element={<ProtectedRoute><CategoryManager /></ProtectedRoute>} />
+          </Routes>
+        </main>
+      </div>
     </BrowserRouter>
   );
 }
