@@ -77,36 +77,35 @@ const EventList = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto p-4">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
+        <div className="max-w-4xl mx-auto px-4 text-text-main space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                     <h2 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight">Events Manager</h2>
-                     <p className="text-xs sm:text-sm text-gray-500 mt-1">Track expenses and incomes for specific programs/events</p>
+                     <h2 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">Event Trackers</h2>
+                     <p className="text-xs sm:text-sm text-text-muted mt-0.5">Aggregate budgets, incomes, and expenses for specific trips or occasions.</p>
                 </div>
                
-                <div className="flex gap-2">
-                    <button 
-                        onClick={() => {
-                            setAddingEvent(!addingEvent);
-                            setEditingEvent(null);
-                            setNewEventName('');
-                        }}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-sm font-bold text-gray-300 transition-all"
-                    >
-                        <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        Add Event
-                    </button>
-                </div>
+                <button 
+                    onClick={() => {
+                        setAddingEvent(!addingEvent);
+                        setEditingEvent(null);
+                        setNewEventName('');
+                    }}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-secondary text-black font-extrabold rounded-xl text-sm transition-transform active:scale-95 cursor-pointer shadow-lg animate-fade-in"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                    Create Event
+                </button>
             </div>
 
             {/* Forms Section */}
             <div className="space-y-6 mb-8">
                 {addingEvent && (
-                     <div className="animate-fade-in bg-card-dark p-4 sm:p-6 rounded-xl border border-gray-700 shadow-2xl relative">
-                          <button onClick={() => setAddingEvent(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                     <div className="animate-fade-in bg-card-dark p-5 rounded-2xl border border-border-main shadow-2xl relative">
+                          <button onClick={() => setAddingEvent(false)} className="absolute top-4 right-4 text-text-muted hover:text-text-main cursor-pointer">
+                            ✕
                           </button>
-                         <h3 className="text-lg sm:text-xl font-bold text-primary mb-4">{editingEvent ? 'Edit Event' : 'Create New Event'}</h3>
+                         <h3 className="text-base sm:text-lg font-black text-primary mb-4 uppercase tracking-wider">{editingEvent ? 'Edit Event Name' : 'Create New Event'}</h3>
                          <form onSubmit={handleCreateEvent} className="flex flex-col sm:flex-row gap-3">
                              <input
                                  type="text"
@@ -114,9 +113,12 @@ const EventList = () => {
                                  onChange={(e) => setNewEventName(e.target.value)}
                                  placeholder="Event Name (e.g., Annual Conference)"
                                  required
-                                 className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 focus:border-primary outline-none text-white text-sm"
+                                 className="flex-1 bg-bg-dark border border-border-main rounded-xl px-4 py-2.5 outline-none focus:border-primary text-sm text-text-main placeholder-text-muted font-semibold animate-fade-in"
                              />
-                             <button type="submit" className="bg-primary hover:bg-primary/90 text-white font-bold py-2.5 px-6 rounded-lg text-sm whitespace-nowrap">
+                             <button 
+                                 type="submit" 
+                                 className="bg-secondary hover:bg-secondary-hover text-black font-extrabold py-2.5 px-6 rounded-xl text-xs uppercase cursor-pointer transition-transform active:scale-95 shadow"
+                             >
                                  Save Event
                              </button>
                          </form>
@@ -124,7 +126,7 @@ const EventList = () => {
                 )}
 
                 {selectedEventForTxn && (
-                    <div className="animate-fade-in bg-card-dark p-1 rounded-xl border border-gray-700 shadow-2xl">
+                    <div className="animate-fade-in bg-card-dark p-1 rounded-2xl border border-border-main shadow-2xl">
                         <TransactionForm 
                             prefillEvent={selectedEventForTxn}
                             onTransactionAdded={handleTransactionAdded}
@@ -143,16 +145,16 @@ const EventList = () => {
             </div>
 
             {loading ? (
-                <div className="text-center py-10">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-gray-400 text-sm">Loading events...</p>
+                <div className="text-center py-20 text-text-muted flex flex-col justify-center items-center gap-3 animate-fade-in">
+                    <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                    <p className="text-sm font-semibold">Updating event registers...</p>
                 </div>
             ) : (
-                <div className="bg-card-dark rounded-xl shadow-xl border border-gray-700/50 overflow-hidden min-h-[400px]">
+                <div className="bg-card-dark rounded-2xl shadow-xl border border-border-main overflow-hidden min-h-[400px] animate-fade-in">
                     <div className="p-4 md:p-6">
                         {events.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                                <p>No events found. Create one to start tracking!</p>
+                            <div className="flex flex-col items-center justify-center py-16 text-text-muted text-sm font-semibold">
+                                <p>No events found. Click 'Create Event' to start tracking budgets.</p>
                             </div>
                         ) : (
                             <ul className="space-y-4">
@@ -196,57 +198,61 @@ const EventItem = ({ event, onAddTxn, onEdit, onDelete, isSelected, onEditTxn, o
     const [showTransactions, setShowTransactions] = useState(false);
 
     return (
-        <li className={`group flex flex-col p-4 sm:p-5 rounded-xl border border-gray-700/50 bg-gray-800/80 hover:border-gray-600 transition-all ${isSelected ? 'border-primary shadow-lg ring-1 ring-primary/50' : 'hover:bg-gray-800 hover:shadow-lg'}`}>
+        <li className={`group flex flex-col p-4 sm:p-5 rounded-2xl border transition-all ${
+            isSelected 
+            ? 'border-primary bg-bg-dark/40 shadow-lg' 
+            : 'border-border-main bg-bg-dark/20 hover:border-border-main/80'
+        }`}>
             <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center w-full gap-4">
                 <div className="flex items-center gap-3.5 w-full md:w-auto">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-lg sm:text-xl font-bold bg-purple-500/20 text-purple-400 shrink-0">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black bg-primary/10 text-primary border border-primary/20 shrink-0">
                         {event.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                        <div className="font-bold text-base sm:text-lg text-white truncate">
+                        <div className="font-extrabold text-base text-text-main truncate">
                             {event.name}
                         </div>
-                        <div className="text-[10px] sm:text-xs text-gray-500 flex flex-wrap items-center gap-1.5 sm:gap-2 mt-0.5">
+                        <div className="text-[10px] sm:text-xs text-text-muted flex flex-wrap items-center gap-1.5 sm:gap-2 mt-0.5 font-semibold">
                             <span>{new Date(event.date).toLocaleDateString()}</span>
                             <span>•</span>
                             <button 
                                 onClick={() => setShowTransactions(!showTransactions)}
-                                className="text-blue-400 hover:text-blue-300 underline font-medium text-left"
+                                className="text-primary hover:underline font-bold text-left cursor-pointer"
                             >
-                                {showTransactions ? 'Hide Transactions' : `View ${event.transactions?.length || 0} Transactions`}
+                                {showTransactions ? 'Hide history' : `View ${event.transactions?.length || 0} transactions`}
                             </button>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between w-full md:w-auto gap-4 mt-2 md:mt-0">
-                    <div className="flex justify-between sm:justify-end gap-4 md:gap-6 border-b sm:border-b-0 border-gray-700/60 pb-3 sm:pb-0">
+                    <div className="flex justify-between sm:justify-end gap-4 md:gap-6 border-b sm:border-b-0 border-border-main/50 pb-3 sm:pb-0 text-xs">
                         <div className="flex flex-col items-center">
-                            <span className="text-[10px] sm:text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Spent</span>
-                            <span className="text-base sm:text-lg font-bold text-red-400">{parseFloat(event.amount_spent).toLocaleString()}</span>
+                            <span className="text-[9px] text-text-muted font-bold uppercase tracking-wider mb-0.5">Spent</span>
+                            <span className="font-bold text-rose-500">₹{parseFloat(event.amount_spent).toLocaleString()}</span>
                         </div>
-                        <div className="w-px bg-gray-700"></div>
+                        <div className="w-px bg-border-main"></div>
                         <div className="flex flex-col items-center">
-                            <span className="text-[10px] sm:text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Received</span>
-                            <span className="text-base sm:text-lg font-bold text-green-400">{parseFloat(event.amount_received).toLocaleString()}</span>
+                            <span className="text-[9px] text-text-muted font-bold uppercase tracking-wider mb-0.5">Received</span>
+                            <span className="font-bold text-emerald-500">₹{parseFloat(event.amount_received).toLocaleString()}</span>
                         </div>
-                        <div className="w-px bg-gray-700"></div>
+                        <div className="w-px bg-border-main"></div>
                         <div className="flex flex-col items-center">
-                            <span className="text-[10px] sm:text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Balance</span>
-                            <span className={`text-base sm:text-lg font-bold ${event.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                {parseFloat(Math.abs(event.balance)).toLocaleString()}
-                                {event.balance < 0 && <span className="block text-[8px] font-semibold text-center mt-0.5">Deficit</span>}
-                                {event.balance > 0 && <span className="block text-[8px] font-semibold text-center mt-0.5">Surplus</span>}
+                            <span className="text-[9px] text-text-muted font-bold uppercase tracking-wider mb-0.5">Balance</span>
+                            <span className={`font-bold ${event.balance >= 0 ? 'text-secondary' : 'text-rose-500'}`}>
+                                ₹{parseFloat(Math.abs(event.balance)).toLocaleString()}
+                                {event.balance < 0 && <span className="block text-[8px] font-bold text-center mt-0.5 uppercase tracking-wide">Deficit</span>}
+                                {event.balance > 0 && <span className="block text-[8px] font-bold text-center mt-0.5 uppercase tracking-wide">Surplus</span>}
                             </span>
                         </div>
                     </div>
                     
-                    <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                         <button 
                             onClick={onAddTxn} 
-                            className="px-3 sm:px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-white text-xs sm:text-sm font-bold shadow-lg transition-all whitespace-nowrap"
+                            className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-black text-xs font-extrabold shadow transition-all whitespace-nowrap cursor-pointer text-center"
                         >
-                            Add txn
+                            Add Txn
                         </button>
                         
                         <button
@@ -267,24 +273,24 @@ const EventItem = ({ event, onAddTxn, onEdit, onDelete, isSelected, onEditTxn, o
                                         });
                                 });
                             }}
-                            className="px-3 sm:px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs sm:text-sm font-bold shadow-lg transition-all whitespace-nowrap flex items-center justify-center gap-1.5"
+                            className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg bg-card-dark border border-border-main hover:bg-bg-dark text-text-muted hover:text-text-main text-xs font-extrabold shadow transition-all whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             Report
                         </button>
 
                         {/* Edit/Delete Actions */}
-                        <div className="flex items-center gap-1 ml-1 border-l border-gray-700 pl-2 shrink-0">
+                        <div className="flex items-center gap-1.5 ml-1 border-l border-border-main pl-2.5 shrink-0">
                             <button 
                                 onClick={onEdit}
-                                className="text-gray-500 hover:text-primary transition-colors p-1 rounded"
+                                className="text-text-muted hover:text-primary transition-colors p-1.5 hover:bg-bg-dark rounded-lg cursor-pointer"
                                 title="Edit"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                             </button>
                             <button 
                                 onClick={onDelete}
-                                className="text-gray-500 hover:text-red-400 transition-colors p-1 rounded"
+                                className="text-text-muted hover:text-error transition-colors p-1.5 hover:bg-bg-dark rounded-lg cursor-pointer"
                                 title="Delete"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -296,14 +302,14 @@ const EventItem = ({ event, onAddTxn, onEdit, onDelete, isSelected, onEditTxn, o
 
             {/* Transactions List Dropdown */}
             {showTransactions && (
-                <div className="mt-6 pt-4 border-t border-gray-700/50 animate-fade-in w-full">
-                    <h4 className="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Event Transactions</h4>
+                <div className="mt-5 pt-4 border-t border-border-main animate-fade-in w-full">
+                    <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Event Transactions</h4>
                     {event.transactions && event.transactions.length > 0 ? (
-                        <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
+                        <div className="bg-bg-dark rounded-xl overflow-hidden border border-border-main">
                             {/* Desktop Table View */}
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-left text-sm">
-                                    <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
+                                    <thead className="bg-card-dark text-text-muted uppercase text-[10px] font-bold border-b border-border-main">
                                         <tr>
                                             <th className="px-4 py-3">Date</th>
                                             <th className="px-4 py-3">Type</th>
@@ -313,27 +319,27 @@ const EventItem = ({ event, onAddTxn, onEdit, onDelete, isSelected, onEditTxn, o
                                             <th className="px-4 py-3 text-right">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-800">
+                                    <tbody className="divide-y divide-border-main/50">
                                         {event.transactions.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
-                                            <tr key={txn.id} className="hover:bg-gray-800/50 transition-colors">
-                                                <td className="px-4 py-2 text-gray-300">{txn.date}</td>
-                                                <td className="px-4 py-2 font-semibold">
-                                                      <span className={`${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                        {txn.transaction_type.replace('_', ' ')}
-                                                    </span>
+                                            <tr key={txn.id} className="hover:bg-card-dark/20 transition-colors">
+                                                <td className="px-4 py-2.5 text-text-muted text-xs font-semibold">{txn.date}</td>
+                                                <td className="px-4 py-2.5 text-xs font-bold">
+                                                      <span className={`${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-error' : 'text-emerald-500'}`}>
+                                                        {txn.transaction_type.replace(/_/g, ' ')}
+                                                      </span>
                                                 </td>
-                                                <td className="px-4 py-2 text-gray-300 truncate max-w-[200px]">{txn.description}</td>
-                                                <td className="px-4 py-2">
-                                                    <span className={`px-2 py-0.5 rounded text-xs ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
+                                                <td className="px-4 py-2.5 text-text-main truncate max-w-[200px] text-xs font-semibold">{txn.description}</td>
+                                                <td className="px-4 py-2.5">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-500/15 text-yellow-500 border border-yellow-500/20' : 'bg-blue-500/15 text-blue-500 border border-blue-500/20'}`}>
                                                         {txn.payment_mode}
                                                     </span>
                                                 </td>
-                                                <td className={`px-4 py-2 text-right font-bold ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                    {parseFloat(txn.amount).toLocaleString()}
+                                                <td className={`px-4 py-2.5 text-right font-mono font-bold text-xs ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-error' : 'text-emerald-500'}`}>
+                                                    ₹{parseFloat(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </td>
-                                                <td className="px-4 py-2 text-right whitespace-nowrap">
-                                                    <button onClick={() => onEditTxn(txn)} className="text-blue-400 hover:text-blue-300 mr-3 text-xs font-bold uppercase tracking-wider">Edit</button>
-                                                    <button onClick={() => onDeleteTxn(txn.id)} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Delete</button>
+                                                <td className="px-4 py-2.5 text-right whitespace-nowrap text-xs">
+                                                    <button onClick={() => onEditTxn(txn)} className="text-primary hover:underline mr-3 font-bold cursor-pointer">Edit</button>
+                                                    <button onClick={() => onDeleteTxn(txn.id)} className="text-error hover:underline font-bold cursor-pointer">Delete</button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -342,40 +348,40 @@ const EventItem = ({ event, onAddTxn, onEdit, onDelete, isSelected, onEditTxn, o
                             </div>
 
                             {/* Mobile Card List View */}
-                            <div className="md:hidden divide-y divide-gray-800">
+                            <div className="md:hidden divide-y divide-border-main/40">
                                 {event.transactions.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
-                                    <div key={txn.id} className="p-4 flex flex-col gap-2.5 hover:bg-gray-800/10 transition-colors">
-                                        <div className="flex justify-between items-center text-xs">
-                                            <span className="text-gray-400">{txn.date}</span>
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
+                                    <div key={txn.id} className="p-4 flex flex-col gap-2.5 hover:bg-card-dark/20 transition-colors">
+                                        <div className="flex justify-between items-center text-[10px]">
+                                            <span className="text-text-muted font-semibold">{txn.date}</span>
+                                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-500/15 text-yellow-500' : 'bg-blue-500/15 text-blue-500'}`}>
                                                 {txn.payment_mode}
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-start gap-2">
                                             <div>
-                                                <span className={`font-semibold block text-sm ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                    {txn.transaction_type.replace('_', ' ')}
+                                                <span className={`font-extrabold block text-sm ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-error' : 'text-emerald-500'}`}>
+                                                    {txn.transaction_type.replace(/_/g, ' ')}
                                                 </span>
                                                 {txn.description && (
-                                                    <p className="text-xs text-gray-300 mt-1 font-medium">{txn.description}</p>
+                                                    <p className="text-xs text-text-muted mt-1 font-semibold">{txn.description}</p>
                                                 )}
                                             </div>
                                             <div className="text-right">
-                                                <span className={`font-bold ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
-                                                    {parseFloat(txn.amount).toLocaleString()}
+                                                <span className={`font-bold font-mono text-xs ${['EXPENSE', 'DEBT_GIVEN', 'INVESTMENT', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-error' : 'text-emerald-500'}`}>
+                                                    ₹{parseFloat(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="flex justify-end gap-4 mt-1 pt-2 border-t border-gray-800/40">
-                                            <button onClick={() => onEditTxn(txn)} className="text-blue-400 hover:text-blue-300 text-xs font-bold uppercase tracking-wider">Edit</button>
-                                            <button onClick={() => onDeleteTxn(txn.id)} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Delete</button>
+                                        <div className="flex justify-end gap-4 mt-1.5 pt-2 border-t border-border-main/30">
+                                            <button onClick={() => onEditTxn(txn)} className="text-primary hover:underline text-[11px] font-bold cursor-pointer">Edit</button>
+                                            <button onClick={() => onDeleteTxn(txn.id)} className="text-error hover:underline text-[11px] font-bold cursor-pointer">Delete</button>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     ) : (
-                        <p className="text-gray-500 text-sm text-center py-4 bg-gray-900 rounded-lg border border-gray-700 border-dashed">No transactions associated with this event.</p>
+                        <p className="text-text-muted text-xs text-center py-4 bg-bg-dark rounded-xl border border-border-main border-dashed">No transactions associated with this event.</p>
                     )}
                 </div>
             )}

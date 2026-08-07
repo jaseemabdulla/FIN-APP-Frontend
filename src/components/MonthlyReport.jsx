@@ -4,7 +4,7 @@ import { getMonthlyReport, exportPDFReport, deleteTransaction } from '../api';
 import TransactionForm from './TransactionForm';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19A3', '#19FFD5', '#F5428D', '#42F587'];
+const COLORS = ['var(--primary)', 'var(--secondary)', '#FFBB28', '#FF8042', '#AF19FF', '#FF19A3', '#19FFD5', '#F5428D', '#42F587'];
 
 const formatTransactionType = (type) => {
     if (!type) return 'Unknown';
@@ -60,7 +60,6 @@ const MonthlyReport = () => {
         }
     }, [month, year]);
 
-    // Fetch data for ON-SCREEN visualization (Only for Monthly currently supported by backend logic here)
     useEffect(() => {
         if (reportType === 'monthly') {
             fetchReportData();
@@ -234,27 +233,31 @@ const MonthlyReport = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto p-4">
-            <div className="bg-card-dark p-4 rounded-xl border border-gray-700 mb-6">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-                    <h2 className="text-xl sm:text-2xl font-bold text-secondary">Reports & Export</h2>
+        <div className="max-w-4xl mx-auto px-4 text-text-main space-y-6">
+            {/* Control Panel */}
+            <div className="bg-card-dark p-4 sm:p-5 rounded-2xl border border-border-main shadow animate-fade-in">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl sm:text-2xl font-black text-secondary tracking-tight">Report Registry</h2>
+                        <p className="text-xs text-text-muted mt-0.5">Visualize statements and export transaction archives.</p>
+                    </div>
                     
-                    <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+                    <div className="flex flex-wrap gap-2.5 items-center w-full md:w-auto">
                         {/* Type Selector */}
                         <select 
                             value={reportType} 
                             onChange={(e) => setReportType(e.target.value)} 
-                            className="bg-gray-800 p-2.5 rounded-lg border border-gray-600 outline-none focus:border-primary text-sm flex-1 sm:flex-initial cursor-pointer text-white"
+                            className="bg-bg-dark p-2.5 rounded-xl border border-border-main outline-none focus:border-primary text-sm flex-1 md:flex-initial cursor-pointer text-text-main font-semibold"
                         >
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
+                            <option value="daily">Daily Statement</option>
+                            <option value="weekly">Weekly Statement</option>
+                            <option value="monthly">Monthly Summary</option>
+                            <option value="yearly">Yearly Summary</option>
                         </select>
 
                         {/* Condition Controls */}
                         {reportType === 'monthly' && (
-                             <select value={month} onChange={(e) => setMonth(e.target.value)} className="bg-gray-800 p-2.5 rounded-lg border border-gray-600 outline-none text-sm flex-1 sm:flex-initial cursor-pointer text-white">
+                             <select value={month} onChange={(e) => setMonth(e.target.value)} className="bg-bg-dark p-2.5 rounded-xl border border-border-main outline-none text-sm flex-1 md:flex-initial cursor-pointer text-text-main font-semibold">
                                     {Array.from({ length: 12 }, (_, i) => (
                                         <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('default', { month: 'short' })}</option>
                                     ))}
@@ -262,7 +265,7 @@ const MonthlyReport = () => {
                         )}
                         
                         {(reportType === 'monthly' || reportType === 'yearly') && (
-                            <select value={year} onChange={(e) => setYear(e.target.value)} className="bg-gray-800 p-2.5 rounded-lg border border-gray-600 outline-none text-sm flex-1 sm:flex-initial cursor-pointer text-white">
+                            <select value={year} onChange={(e) => setYear(e.target.value)} className="bg-bg-dark p-2.5 rounded-xl border border-border-main outline-none text-sm flex-1 md:flex-initial cursor-pointer text-text-main font-semibold">
                                 <option value="2025">2025</option>
                                 <option value="2026">2026</option>
                             </select>
@@ -273,16 +276,16 @@ const MonthlyReport = () => {
                                 type="date" 
                                 value={date} 
                                 onChange={(e) => setDate(e.target.value)} 
-                                className="bg-gray-800 text-white border border-gray-600 rounded-lg p-2.5 outline-none text-sm flex-1 sm:flex-initial cursor-pointer"
+                                className="bg-bg-dark text-text-main border border-border-main rounded-xl p-2.5 outline-none text-sm flex-1 md:flex-initial cursor-pointer font-semibold"
                             />
                         )}
 
                         <button 
                             onClick={handleDownloadPDF}
-                            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 text-sm flex-1 sm:flex-initial transition-colors"
+                            className="bg-error text-white font-extrabold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-sm flex-1 md:flex-initial transition-all cursor-pointer shadow active:scale-95 border border-error hover:bg-opacity-90"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                            <span>PDF</span>
+                            <span>Download PDF</span>
                         </button>
                     </div>
                 </div>
@@ -290,75 +293,75 @@ const MonthlyReport = () => {
 
             {/* Dashboard View - Only for Monthly currently */}
             {loading && (
-                <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-gray-400 text-sm">Loading Report...</p>
+                <div className="text-center py-20 flex flex-col justify-center items-center gap-3">
+                    <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                    <p className="text-text-muted text-sm font-semibold">Generating report card...</p>
                 </div>
             )}
 
             {!loading && reportType === 'monthly' && report && (
                 <>
                     {/* Day-to-Day Cash Flow Section */}
-                    <div className="mb-6">
-                        <h4 className="text-xs sm:text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Day-to-Day Cash Flow</h4>
+                    <div className="space-y-3 animate-fade-in">
+                        <h4 className="text-[10px] sm:text-xs font-black text-text-muted uppercase tracking-widest">Day-to-Day Cash Flow</h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Total Income */}
-                            <div className="bg-card-dark p-5 rounded-xl border border-gray-700/60 shadow-lg transition-transform hover:-translate-y-0.5 duration-200">
-                                <h3 className="text-gray-400 mb-1 uppercase text-[10px] sm:text-xs tracking-wider">Total Income</h3>
-                                <p className="text-2xl sm:text-3xl font-bold text-green-400">+{parseFloat(report.total_income || 0).toLocaleString()}</p>
-                                <span className="text-[10px] text-gray-500 block mt-1">Standard income categories only</span>
+                            <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/20 shadow-md">
+                                <h3 className="text-text-muted mb-1.5 uppercase text-[10px] tracking-wider font-bold">Total Income</h3>
+                                <p className="text-xl sm:text-2xl font-black text-emerald-500">₹{parseFloat(report.total_income || 0).toLocaleString()}</p>
+                                <span className="text-[9px] text-text-muted block mt-1">Standard categories only</span>
                             </div>
                             {/* Total Expenses */}
-                            <div className="bg-card-dark p-5 rounded-xl border border-gray-700/60 shadow-lg transition-transform hover:-translate-y-0.5 duration-200">
-                                <h3 className="text-gray-400 mb-1 uppercase text-[10px] sm:text-xs tracking-wider">Total Expenses</h3>
-                                <p className="text-2xl sm:text-3xl font-bold text-red-400">-{parseFloat(report.total_expense || 0).toLocaleString()}</p>
-                                <span className="text-[10px] text-gray-500 block mt-1">Standard expense categories only</span>
+                            <div className="bg-rose-500/5 p-4 rounded-2xl border border-rose-500/20 shadow-md">
+                                <h3 className="text-text-muted mb-1.5 uppercase text-[10px] tracking-wider font-bold">Total Expenses</h3>
+                                <p className="text-xl sm:text-2xl font-black text-rose-500">₹{parseFloat(report.total_expense || 0).toLocaleString()}</p>
+                                <span className="text-[9px] text-text-muted block mt-1">Standard categories only</span>
                             </div>
                             {/* Net Savings */}
-                            <div className="bg-card-dark p-5 rounded-xl border border-gray-700/60 shadow-lg transition-transform hover:-translate-y-0.5 duration-200 bg-gradient-to-br from-card-dark to-blue-950/10">
-                                <h3 className="text-gray-400 mb-1 uppercase text-[10px] sm:text-xs tracking-wider">Net Savings</h3>
-                                <p className={`text-2xl sm:text-3xl font-bold ${report.net_savings >= 0 ? 'text-blue-400' : 'text-red-500'}`}>
-                                    {parseFloat(report.net_savings || 0).toLocaleString()}
+                            <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 shadow-md">
+                                <h3 className="text-text-muted mb-1.5 uppercase text-[10px] tracking-wider font-bold">Net Savings</h3>
+                                <p className={`text-xl sm:text-2xl font-black ${report.net_savings >= 0 ? 'text-primary' : 'text-error'}`}>
+                                    ₹{parseFloat(report.net_savings || 0).toLocaleString()}
                                 </p>
-                                <span className="text-[10px] text-gray-500 block mt-1">Income minus Expenses</span>
+                                <span className="text-[9px] text-text-muted block mt-1">Income minus Expenses</span>
                             </div>
                         </div>
                     </div>
 
                     {/* System-Wide Inflows, Outflows & Balances */}
-                    <div className="mb-8">
-                        <h4 className="text-xs sm:text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Overall Credits, Debits & Net Difference</h4>
+                    <div className="space-y-3 pt-2 animate-fade-in">
+                        <h4 className="text-[10px] sm:text-xs font-black text-text-muted uppercase tracking-widest">Inflows, Outflows & Savings</h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Total Credit */}
-                            <div className="bg-card-dark p-5 rounded-xl border border-gray-700/60 shadow-lg transition-transform hover:-translate-y-0.5 duration-200 bg-gradient-to-br from-card-dark to-emerald-950/10">
-                                <h3 className="text-gray-400 mb-1 uppercase text-[10px] sm:text-xs tracking-wider">Total Credit</h3>
-                                <p className="text-2xl sm:text-3xl font-bold text-emerald-400">+{parseFloat(report.total_credit || 0).toLocaleString()}</p>
-                                <span className="text-[10px] text-gray-500 block mt-1">All inflows (Income + Debt + Returns)</span>
+                            <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/20 shadow-md">
+                                <h3 className="text-text-muted mb-1.5 uppercase text-[10px] tracking-wider font-bold">Total Credit</h3>
+                                <p className="text-xl sm:text-2xl font-black text-emerald-500">₹{parseFloat(report.total_credit || 0).toLocaleString()}</p>
+                                <span className="text-[9px] text-text-muted block mt-1">Income + Borrowed + Collected</span>
                             </div>
                             {/* Total Debit / Spent */}
-                            <div className="bg-card-dark p-5 rounded-xl border border-gray-700/60 shadow-lg transition-transform hover:-translate-y-0.5 duration-200 bg-gradient-to-br from-card-dark to-orange-950/10">
-                                <h3 className="text-gray-400 mb-1 uppercase text-[10px] sm:text-xs tracking-wider">Total Debit (Spent)</h3>
-                                <p className="text-2xl sm:text-3xl font-bold text-orange-400">-{parseFloat(report.total_debit || 0).toLocaleString()}</p>
-                                <span className="text-[10px] text-gray-500 block mt-1">All outflows (Expenses + Debts + Investments)</span>
+                            <div className="bg-orange-500/5 p-4 rounded-2xl border border-orange-500/20 shadow-md">
+                                <h3 className="text-text-muted mb-1.5 uppercase text-[10px] tracking-wider font-bold">Total Debit</h3>
+                                <p className="text-xl sm:text-2xl font-black text-orange-500">₹{parseFloat(report.total_debit || 0).toLocaleString()}</p>
+                                <span className="text-[9px] text-text-muted block mt-1">Expenses + Lent + Investments</span>
                             </div>
                             {/* Net Difference */}
-                            <div className="bg-card-dark p-5 rounded-xl border border-primary/40 shadow-lg transition-transform hover:-translate-y-0.5 duration-200 bg-gradient-to-br from-card-dark to-purple-950/20">
-                                <h3 className="text-purple-300 mb-1 uppercase text-[10px] sm:text-xs tracking-wider font-semibold">Net Difference</h3>
-                                <p className={`text-2xl sm:text-3xl font-bold ${parseFloat(report.total_credit || 0) - parseFloat(report.total_debit || 0) >= 0 ? 'text-purple-400' : 'text-red-400'}`}>
-                                    {(parseFloat(report.total_credit || 0) - parseFloat(report.total_debit || 0)).toLocaleString()}
-                                </p>
-                                <span className="text-[10px] text-gray-400 block mt-1">
-                                    Overall Credits minus Overall Debits
-                                </span>
-                                <div className="mt-3 pt-2 border-t border-gray-800/40 flex flex-col gap-2">
-                                    <div className="flex justify-between items-center text-[11px]">
-                                        <span className="text-gray-400 font-medium">Invested:</span>
-                                        <span className="font-bold text-emerald-400">{getSurplusInvestedAmount().toLocaleString()}</span>
+                            <div className="bg-secondary/5 p-4 rounded-2xl border border-secondary/20 shadow-md flex flex-col justify-between">
+                                <div>
+                                    <h3 className="text-text-muted mb-1.5 uppercase text-[10px] tracking-wider font-bold">Net Balance</h3>
+                                    <p className={`text-xl sm:text-2xl font-black ${parseFloat(report.total_credit || 0) - parseFloat(report.total_debit || 0) >= 0 ? 'text-secondary' : 'text-error'}`}>
+                                        ₹{(parseFloat(report.total_credit || 0) - parseFloat(report.total_debit || 0)).toLocaleString()}
+                                    </p>
+                                    <span className="text-[9px] text-text-muted block mt-1">Total Credits minus Total Debits</span>
+                                </div>
+                                <div className="mt-4 pt-3 border-t border-border-main/50 flex flex-col gap-2">
+                                    <div className="flex justify-between items-center text-[10px] text-text-muted font-bold uppercase">
+                                        <span>Invested:</span>
+                                        <span className="text-secondary">₹{getSurplusInvestedAmount().toLocaleString()}</span>
                                     </div>
                                     {parseFloat(report.total_credit || 0) - parseFloat(report.total_debit || 0) > 0 && (
                                         <button 
                                             onClick={() => setPrefillInvestment({ amount: parseFloat(report.total_credit || 0) - parseFloat(report.total_debit || 0) })}
-                                            className="w-full text-center text-[10px] bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-2 rounded-lg transition-colors uppercase tracking-wider cursor-pointer"
+                                            className="w-full text-center text-[10px] bg-secondary hover:bg-secondary-hover text-black font-extrabold py-2 px-2.5 rounded-lg transition-colors uppercase tracking-wider cursor-pointer shadow-sm active:scale-95"
                                         >
                                             💼 Convert to Investment
                                         </button>
@@ -369,42 +372,43 @@ const MonthlyReport = () => {
                     </div>
 
                     {/* Financial Breakdowns & Audits Section */}
-                    <div className="mb-6">
-                        <div className="flex border-b border-gray-700 mb-6 gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                    <div className="space-y-4 pt-4">
+                        {/* Segmented Control / Tab Bar */}
+                        <div className="flex border-b border-border-main bg-bg-dark/45 p-1 rounded-xl border overflow-x-auto scrollbar-none">
                             <button
                                 onClick={() => setActiveTab('categories')}
-                                className={`px-4 py-2 font-semibold text-sm rounded-t-lg transition-colors whitespace-nowrap ${activeTab === 'categories' ? 'bg-primary text-white font-bold border-b-2 border-primary' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+                                className={`flex-1 py-2 text-center text-xs font-bold rounded-lg cursor-pointer transition-all whitespace-nowrap px-4 ${activeTab === 'categories' ? 'bg-card-dark text-primary shadow' : 'text-text-muted hover:text-text-main'}`}
                             >
                                 📊 Categories
                             </button>
                             <button
                                 onClick={() => setActiveTab('debt')}
-                                className={`px-4 py-2 font-semibold text-sm rounded-t-lg transition-colors whitespace-nowrap ${activeTab === 'debt' ? 'bg-primary text-white font-bold border-b-2 border-primary' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+                                className={`flex-1 py-2 text-center text-xs font-bold rounded-lg cursor-pointer transition-all whitespace-nowrap px-4 ${activeTab === 'debt' ? 'bg-card-dark text-primary shadow' : 'text-text-muted hover:text-text-main'}`}
                             >
                                 🤝 Debt Log
                             </button>
                             <button
                                 onClick={() => setActiveTab('audit')}
-                                className={`px-4 py-2 font-semibold text-sm rounded-t-lg transition-colors whitespace-nowrap ${activeTab === 'audit' ? 'bg-primary text-white font-bold border-b-2 border-primary' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+                                className={`flex-1 py-2 text-center text-xs font-bold rounded-lg cursor-pointer transition-all whitespace-nowrap px-4 ${activeTab === 'audit' ? 'bg-card-dark text-primary shadow' : 'text-text-muted hover:text-text-main'}`}
                             >
-                                🔄 Credit & Debit Audit
+                                🔍 Inflow vs Outflow
                             </button>
                             <button
                                 onClick={() => setActiveTab('comparison')}
-                                className={`px-4 py-2 font-semibold text-sm rounded-t-lg transition-colors whitespace-nowrap ${activeTab === 'comparison' ? 'bg-primary text-white font-bold border-b-2 border-primary' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+                                className={`flex-1 py-2 text-center text-xs font-bold rounded-lg cursor-pointer transition-all whitespace-nowrap px-4 ${activeTab === 'comparison' ? 'bg-card-dark text-primary shadow' : 'text-text-muted hover:text-text-main'}`}
                             >
-                                📊 Category Comparison
+                                📈 Comparison
                             </button>
                         </div>
 
                         {activeTab === 'categories' && (
-                            <>
-                                <h3 className="text-lg sm:text-xl font-semibold mb-4 text-white">Category Breakdown</h3>
-                                <div className="bg-card-dark rounded-xl shadow-xl border border-gray-700/50 overflow-hidden mb-8">
-                                    <div className="p-3 sm:p-5">
+                            <div className="space-y-4 animate-fade-in">
+                                <h3 className="text-base sm:text-lg font-extrabold text-text-main">Category Breakdown</h3>
+                                <div className="bg-card-dark rounded-2xl shadow border border-border-main overflow-hidden">
+                                    <div className="p-4 sm:p-5">
                                         {report.category_breakdown.length === 0 ? (
-                                            <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                                                <p>No data available for this month.</p>
+                                            <div className="flex flex-col items-center justify-center py-12 text-text-muted">
+                                                <p className="text-sm font-semibold">No data available for this month.</p>
                                             </div>
                                         ) : (() => {
                                             // Group categories by type
@@ -424,47 +428,47 @@ const MonthlyReport = () => {
                                                         const totalForType = categoriesOfType.reduce((sum, c) => sum + parseFloat(c.total || 0), 0);
 
                                                         return (
-                                                            <div key={type} className="mb-6 last:mb-0">
-                                                                <div className="flex justify-between items-center border-b border-gray-800 pb-2 mb-4">
-                                                                    <h4 className="text-sm font-bold text-secondary uppercase tracking-wider">
+                                                            <div key={type} className="space-y-3">
+                                                                <div className="flex justify-between items-center border-b border-border-main pb-2 mb-3">
+                                                                    <h4 className="text-xs font-extrabold text-secondary uppercase tracking-widest">
                                                                         {formatTransactionType(type)}
                                                                     </h4>
-                                                                    <span className="text-xs text-gray-400 font-semibold font-mono">
+                                                                    <span className="text-xs text-text-muted font-bold font-mono">
                                                                         Total: ₹{totalForType.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                     </span>
                                                                 </div>
 
-                                                                <ul className="space-y-4">
+                                                                <ul className="space-y-3">
                                                                     {categoriesOfType.map((cat, idx) => {
                                                                         const catKey = `${type}-${cat.category}`;
                                                                         const isExpanded = expandedCategory === catKey;
 
                                                                         return (
-                                                                            <li key={catKey} className={`group flex flex-col p-4 sm:p-5 rounded-xl border border-gray-700/50 transition-all ${isExpanded ? 'bg-gray-800 border-primary shadow-lg ring-1 ring-primary/50' : 'bg-gray-800/80 hover:bg-gray-800 hover:border-gray-600 hover:shadow-lg'}`}>
+                                                                            <li key={catKey} className={`group flex flex-col p-4 rounded-xl border transition-all ${isExpanded ? 'bg-bg-dark border-primary shadow-lg' : 'bg-bg-dark/40 border-border-main hover:border-border-main/80'}`}>
                                                                                 <div className="flex justify-between items-center w-full cursor-pointer gap-2" onClick={() => setExpandedCategory(isExpanded ? null : catKey)}>
                                                                                     <div className="flex items-center gap-3 min-w-0">
-                                                                                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold bg-gray-900 shrink-0" style={{ color: COLORS[idx % COLORS.length] }}>
+                                                                                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black bg-card-dark shrink-0" style={{ color: COLORS[idx % COLORS.length] }}>
                                                                                             {cat.category.charAt(0).toUpperCase()}
                                                                                         </div>
                                                                                         <div className="min-w-0">
-                                                                                            <div className="font-bold text-sm sm:text-base text-white flex items-center gap-2 truncate">
+                                                                                            <div className="font-extrabold text-sm sm:text-base text-text-main flex items-center gap-2 truncate">
                                                                                                 <span className="truncate">{cat.category}</span>
                                                                                             </div>
-                                                                                            <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                                                                                            <div className="text-[10px] text-text-muted flex items-center gap-2 mt-0.5">
                                                                                                 <button 
                                                                                                     type="button"
                                                                                                     onClick={(e) => { e.stopPropagation(); setExpandedCategory(isExpanded ? null : catKey); }}
-                                                                                                    className="text-blue-400 hover:text-blue-300 underline font-medium cursor-pointer"
+                                                                                                    className="text-primary hover:underline font-bold cursor-pointer"
                                                                                                 >
-                                                                                                    {isExpanded ? 'Hide' : `View ${cat.transactions?.length || 0} txns`}
+                                                                                                    {isExpanded ? 'Collapse' : `View details (${cat.transactions?.length || 0})`}
                                                                                                 </button>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
 
                                                                                     <div className="text-right shrink-0">
-                                                                                        <span className="block text-[9px] text-gray-500 font-bold uppercase tracking-wider">Total</span>
-                                                                                        <span className="text-sm sm:text-base font-bold text-white font-mono">
+                                                                                        <span className="block text-[9px] text-text-muted font-bold uppercase tracking-wider">Total</span>
+                                                                                        <span className="text-sm font-bold text-text-main font-mono">
                                                                                             ₹{parseFloat(cat.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                         </span>
                                                                                     </div>
@@ -472,16 +476,16 @@ const MonthlyReport = () => {
 
                                                                                 {/* Transactions List Dropdown */}
                                                                                 {isExpanded && cat.transactions && (
-                                                                                    <div className="mt-5 pt-4 border-t border-gray-700/50 animate-fade-in w-full">
-                                                                                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Category Transactions</h4>
+                                                                                    <div className="mt-4 pt-4 border-t border-border-main animate-fade-in w-full">
+                                                                                        <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Transactions Ledger</h4>
                                                                                         {cat.transactions.length === 0 ? (
-                                                                                            <p className="text-gray-500 text-xs py-4 text-center bg-gray-900 rounded-lg border border-gray-700 border-dashed">No transactions.</p>
+                                                                                            <p className="text-text-muted text-xs py-4 text-center bg-bg-dark rounded-xl border border-border-main border-dashed">No transactions.</p>
                                                                                         ) : (
-                                                                                            <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
+                                                                                            <div className="bg-bg-dark rounded-xl overflow-hidden border border-border-main">
                                                                                                 {/* Desktop Table View */}
                                                                                                 <div className="hidden md:block overflow-x-auto">
                                                                                                     <table className="w-full text-left text-sm">
-                                                                                                        <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
+                                                                                                        <thead className="bg-card-dark text-text-muted uppercase text-[10px] font-bold tracking-wider border-b border-border-main">
                                                                                                             <tr>
                                                                                                                 <th className="px-4 py-3">Date</th>
                                                                                                                 <th className="px-4 py-3">Description</th>
@@ -490,24 +494,24 @@ const MonthlyReport = () => {
                                                                                                                 <th className="px-4 py-3 text-right">Actions</th>
                                                                                                             </tr>
                                                                                                         </thead>
-                                                                                                        <tbody className="divide-y divide-gray-800">
+                                                                                                        <tbody className="divide-y divide-border-main/50">
                                                                                                             {cat.transactions.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
-                                                                                                                <tr key={txn.id} className="hover:bg-gray-800/50 transition-colors">
-                                                                                                                    <td className="px-4 py-2.5 text-gray-300 whitespace-nowrap">{txn.date}</td>
-                                                                                                                    <td className="px-4 py-2.5 text-gray-300 truncate max-w-[200px]" title={txn.description || 'No description'}>
-                                                                                                                        {txn.description || <span className="text-gray-600 italic">None</span>}
+                                                                                                                <tr key={txn.id} className="hover:bg-card-dark/20 transition-colors">
+                                                                                                                    <td className="px-4 py-2.5 text-text-muted whitespace-nowrap text-xs font-semibold">{txn.date}</td>
+                                                                                                                    <td className="px-4 py-2.5 text-text-main truncate max-w-[200px] text-xs font-semibold" title={txn.description || 'No description'}>
+                                                                                                                        {txn.description || <span className="text-text-muted italic">None</span>}
                                                                                                                     </td>
                                                                                                                     <td className="px-4 py-2.5 whitespace-nowrap">
-                                                                                                                        <span className={`px-2 py-0.5 rounded text-xs ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
+                                                                                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-500/15 text-yellow-500 border border-yellow-500/20' : 'bg-blue-500/15 text-blue-500 border border-blue-500/20'}`}>
                                                                                                                             {txn.payment_mode}
                                                                                                                         </span>
                                                                                                                     </td>
-                                                                                                                    <td className="px-4 py-2.5 text-right font-bold font-mono whitespace-nowrap text-white">
+                                                                                                                    <td className="px-4 py-2.5 text-right font-bold font-mono whitespace-nowrap text-text-main text-xs">
                                                                                                                         ₹{parseFloat(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                                                     </td>
-                                                                                                                    <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                                                                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 mr-3 text-xs uppercase font-bold tracking-wider cursor-pointer">Edit</button>
-                                                                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs uppercase font-bold tracking-wider cursor-pointer">Delete</button>
+                                                                                                                    <td className="px-4 py-2.5 text-right whitespace-nowrap text-xs">
+                                                                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-primary hover:underline mr-3 font-bold cursor-pointer">Edit</button>
+                                                                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-error hover:underline font-bold cursor-pointer">Delete</button>
                                                                                                                     </td>
                                                                                                                 </tr>
                                                                                                             ))}
@@ -516,30 +520,30 @@ const MonthlyReport = () => {
                                                                                                 </div>
 
                                                                                                 {/* Mobile Card List View */}
-                                                                                                <div className="md:hidden divide-y divide-gray-800">
+                                                                                                <div className="md:hidden divide-y divide-border-main/40">
                                                                                                     {cat.transactions.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
-                                                                                                        <div key={txn.id} className="p-3.5 flex flex-col gap-2 hover:bg-gray-800/10 transition-colors">
-                                                                                                            <div className="flex justify-between items-center text-xs">
-                                                                                                                <span className="text-gray-400">{txn.date}</span>
-                                                                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
+                                                                                                        <div key={txn.id} className="p-3.5 flex flex-col gap-2 hover:bg-card-dark/20 transition-colors">
+                                                                                                            <div className="flex justify-between items-center text-[10px]">
+                                                                                                                <span className="text-text-muted font-semibold">{txn.date}</span>
+                                                                                                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-500/15 text-yellow-500' : 'bg-blue-500/15 text-blue-500'}`}>
                                                                                                                     {txn.payment_mode}
                                                                                                                 </span>
                                                                                                             </div>
                                                                                                             <div className="flex justify-between items-start gap-2">
                                                                                                                 <div>
                                                                                                                     {txn.description && (
-                                                                                                                        <p className="text-xs text-gray-300 mt-1 font-medium">{txn.description}</p>
+                                                                                                                        <p className="text-xs text-text-muted font-semibold">{txn.description}</p>
                                                                                                                     )}
                                                                                                                 </div>
                                                                                                                 <div className="text-right">
-                                                                                                                    <span className="font-bold text-white font-mono">
+                                                                                                                    <span className="font-bold text-text-main font-mono text-xs">
                                                                                                                         ₹{parseFloat(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                                                     </span>
                                                                                                                 </div>
                                                                                                             </div>
-                                                                                                            <div className="flex justify-end gap-4 mt-1 pt-2 border-t border-gray-800/40">
-                                                                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 text-xs font-bold uppercase tracking-wider cursor-pointer">Edit</button>
-                                                                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider cursor-pointer">Delete</button>
+                                                                                                            <div className="flex justify-end gap-4 mt-1.5 pt-2 border-t border-border-main/30">
+                                                                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-primary hover:underline text-[11px] font-bold cursor-pointer">Edit</button>
+                                                                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-error hover:underline text-[11px] font-bold cursor-pointer">Delete</button>
                                                                                                             </div>
                                                                                                         </div>
                                                                                                     ))}
@@ -560,50 +564,50 @@ const MonthlyReport = () => {
                                         })()}
                                     </div>
                                 </div>
-                            </>
+                            </div>
                         )}
 
                         {activeTab === 'debt' && report.debt_breakdown && (
-                            <>
-                                <h3 className="text-lg sm:text-xl font-semibold mb-4 text-white">Debt & Repayments Breakdown</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div className="space-y-4 animate-fade-in">
+                                <h3 className="text-base sm:text-lg font-extrabold text-text-main">Debt & Repayments Log</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     <button 
                                         type="button"
                                         onClick={() => setSelectedDebtCategory('borrowed')}
-                                        className={`p-3.5 sm:p-4 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'borrowed' ? 'bg-green-950/20 border-green-500 shadow-md shadow-green-950/30' : 'bg-card-dark border-gray-700/60 hover:border-gray-600'}`}
+                                        className={`p-3.5 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'borrowed' ? 'bg-emerald-500/10 border-emerald-500/30 shadow' : 'bg-card-dark border-border-main hover:border-border-main/80'}`}
                                     >
-                                        <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider mb-1">Debt Borrowed</div>
-                                        <div className="text-base sm:text-xl font-bold text-green-400">+{parseFloat(report.debt_breakdown.debt_taken).toLocaleString()}</div>
+                                        <div className="text-[10px] text-text-muted uppercase tracking-wider mb-1 font-bold">Borrowed</div>
+                                        <div className="text-base sm:text-lg font-black text-emerald-500">+₹{parseFloat(report.debt_breakdown.debt_taken).toLocaleString()}</div>
                                     </button>
                                     <button 
                                         type="button"
                                         onClick={() => setSelectedDebtCategory('lent')}
-                                        className={`p-3.5 sm:p-4 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'lent' ? 'bg-red-950/20 border-red-500 shadow-md shadow-red-950/30' : 'bg-card-dark border-gray-700/60 hover:border-gray-600'}`}
+                                        className={`p-3.5 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'lent' ? 'bg-rose-500/10 border-rose-500/30 shadow' : 'bg-card-dark border-border-main hover:border-border-main/80'}`}
                                     >
-                                        <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider mb-1">Debt Lent</div>
-                                        <div className="text-base sm:text-xl font-bold text-red-400">-{parseFloat(report.debt_breakdown.debt_given).toLocaleString()}</div>
+                                        <div className="text-[10px] text-text-muted uppercase tracking-wider mb-1 font-bold">Lent</div>
+                                        <div className="text-base sm:text-lg font-black text-rose-500">-₹{parseFloat(report.debt_breakdown.debt_given).toLocaleString()}</div>
                                     </button>
                                     <button 
                                         type="button"
                                         onClick={() => setSelectedDebtCategory('repaid')}
-                                        className={`p-3.5 sm:p-4 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'repaid' ? 'bg-orange-950/20 border-orange-500 shadow-md shadow-orange-950/30' : 'bg-card-dark border-gray-700/60 hover:border-gray-600'}`}
+                                        className={`p-3.5 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'repaid' ? 'bg-orange-500/10 border-orange-500/30 shadow' : 'bg-card-dark border-border-main hover:border-border-main/80'}`}
                                     >
-                                        <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider mb-1">Debt Repaid</div>
-                                        <div className="text-base sm:text-xl font-bold text-red-400">-{parseFloat(report.debt_breakdown.debt_taken_return).toLocaleString()}</div>
+                                        <div className="text-[10px] text-text-muted uppercase tracking-wider mb-1 font-bold">Repaid</div>
+                                        <div className="text-base sm:text-lg font-black text-orange-500">-₹{parseFloat(report.debt_breakdown.debt_taken_return).toLocaleString()}</div>
                                     </button>
                                     <button 
                                         type="button"
                                         onClick={() => setSelectedDebtCategory('collected')}
-                                        className={`p-3.5 sm:p-4 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'collected' ? 'bg-emerald-950/20 border-emerald-500 shadow-md shadow-emerald-950/30' : 'bg-card-dark border-gray-700/60 hover:border-gray-600'}`}
+                                        className={`p-3.5 rounded-xl border text-center transition-all cursor-pointer ${selectedDebtCategory === 'collected' ? 'bg-emerald-500/10 border-emerald-500/30 shadow' : 'bg-card-dark border-border-main hover:border-border-main/80'}`}
                                     >
-                                        <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider mb-1">Debt Collected</div>
-                                        <div className="text-base sm:text-xl font-bold text-green-400">+{parseFloat(report.debt_breakdown.debt_given_return).toLocaleString()}</div>
+                                        <div className="text-[10px] text-text-muted uppercase tracking-wider mb-1 font-bold font-sans">Collected</div>
+                                        <div className="text-base sm:text-lg font-black text-emerald-500">+₹{parseFloat(report.debt_breakdown.debt_given_return).toLocaleString()}</div>
                                     </button>
                                 </div>
 
-                                <div className="bg-card-dark rounded-xl shadow-xl border border-gray-700/50 overflow-hidden mb-8 p-3 sm:p-4">
-                                    <h4 className="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                                        Debt Transactions ({selectedDebtCategory === 'borrowed' ? 'Borrowed' : selectedDebtCategory === 'lent' ? 'Lent' : selectedDebtCategory === 'repaid' ? 'Repaid' : 'Collected'})
+                                <div className="bg-card-dark rounded-2xl shadow border border-border-main overflow-hidden mb-8 p-3 sm:p-4">
+                                    <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">
+                                        Debt Ledger ({selectedDebtCategory === 'borrowed' ? 'Borrowed' : selectedDebtCategory === 'lent' ? 'Lent' : selectedDebtCategory === 'repaid' ? 'Repaid' : 'Collected'})
                                     </h4>
                                     {(() => {
                                         const filteredTxns = (report.debt_breakdown.transactions || []).filter(txn => {
@@ -616,18 +620,18 @@ const MonthlyReport = () => {
 
                                         if (filteredTxns.length === 0) {
                                             return (
-                                                <p className="text-gray-500 text-xs py-8 text-center bg-gray-900 rounded-lg border border-gray-700 border-dashed">
+                                                <p className="text-text-muted text-xs py-8 text-center bg-bg-dark rounded-xl border border-border-main border-dashed">
                                                     No transactions recorded for this category.
                                                 </p>
                                             );
                                         }
 
                                         return (
-                                            <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
+                                            <div className="bg-bg-dark rounded-xl overflow-hidden border border-border-main animate-fade-in">
                                                 {/* Desktop Table View */}
                                                 <div className="hidden md:block overflow-x-auto">
                                                     <table className="w-full text-left text-sm">
-                                                        <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
+                                                        <thead className="bg-card-dark text-text-muted uppercase text-[10px] font-bold border-b border-border-main">
                                                             <tr>
                                                                 <th className="px-4 py-3">Date</th>
                                                                 <th className="px-4 py-3">Person (Ledger)</th>
@@ -637,31 +641,31 @@ const MonthlyReport = () => {
                                                                 <th className="px-4 py-3 text-right">Actions</th>
                                                             </tr>
                                                         </thead>
-                                                        <tbody className="divide-y divide-gray-800">
+                                                        <tbody className="divide-y divide-border-main/50">
                                                             {filteredTxns.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
                                                                 <tr 
                                                                     key={txn.id} 
                                                                     onClick={() => setDetailedTransaction(txn)}
-                                                                    className="hover:bg-gray-800/50 transition-colors cursor-pointer"
+                                                                    className="hover:bg-card-dark/20 transition-colors cursor-pointer"
                                                                 >
-                                                                    <td className="px-4 py-2.5 text-gray-300 whitespace-nowrap">{txn.date}</td>
-                                                                    <td className="px-4 py-2.5 font-semibold text-primary whitespace-nowrap">
-                                                                        {txn.ledger_name || txn.description || <span className="text-gray-600 italic">None</span>}
+                                                                    <td className="px-4 py-2.5 text-text-muted whitespace-nowrap text-xs">{txn.date}</td>
+                                                                    <td className="px-4 py-2.5 font-bold text-primary whitespace-nowrap text-xs">
+                                                                        {txn.ledger_name || txn.description || <span className="text-text-muted italic">None</span>}
                                                                     </td>
-                                                                    <td className="px-4 py-2.5 text-gray-300 truncate max-w-[200px]" title={txn.description || 'No description'}>
-                                                                        {txn.description || <span className="text-gray-600 italic">None</span>}
+                                                                    <td className="px-4 py-2.5 text-text-main truncate max-w-[200px] text-xs font-semibold" title={txn.description || 'No description'}>
+                                                                        {txn.description || <span className="text-text-muted italic">None</span>}
                                                                     </td>
                                                                     <td className="px-4 py-2.5 whitespace-nowrap">
-                                                                        <span className={`px-2 py-0.5 rounded text-xs ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
+                                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-500/15 text-yellow-500 border border-yellow-500/20' : 'bg-blue-500/15 text-blue-500 border border-blue-500/20'}`}>
                                                                             {txn.payment_mode}
                                                                         </span>
                                                                     </td>
-                                                                    <td className={`px-4 py-2.5 text-right font-bold whitespace-nowrap ${['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
+                                                                    <td className={`px-4 py-2.5 text-right font-mono font-bold text-xs whitespace-nowrap ${['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-error' : 'text-emerald-500'}`}>
                                                                         {['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? '-' : '+'}{parseFloat(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                     </td>
-                                                                    <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 mr-3 text-xs uppercase font-bold tracking-wider cursor-pointer">Edit</button>
-                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs uppercase font-bold tracking-wider cursor-pointer">Delete</button>
+                                                                    <td className="px-4 py-2.5 text-right whitespace-nowrap text-xs">
+                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-primary hover:underline mr-3 font-bold cursor-pointer">Edit</button>
+                                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-error hover:underline font-bold cursor-pointer">Delete</button>
                                                                     </td>
                                                                 </tr>
                                                             ))}
@@ -670,37 +674,37 @@ const MonthlyReport = () => {
                                                 </div>
 
                                                 {/* Mobile Card List View */}
-                                                <div className="md:hidden divide-y divide-gray-800">
+                                                <div className="md:hidden divide-y divide-border-main/40">
                                                     {filteredTxns.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(txn => (
                                                         <div 
                                                             key={txn.id} 
                                                             onClick={() => setDetailedTransaction(txn)}
-                                                            className="p-3.5 flex flex-col gap-2.5 hover:bg-gray-800/10 transition-colors cursor-pointer"
+                                                            className="p-3.5 flex flex-col gap-2 hover:bg-card-dark/20 transition-colors cursor-pointer"
                                                         >
-                                                            <div className="flex justify-between items-center text-xs">
-                                                                <span className="text-gray-400">{txn.date}</span>
-                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'}`}>
+                                                            <div className="flex justify-between items-center text-[10px]">
+                                                                <span className="text-text-muted font-semibold">{txn.date}</span>
+                                                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${txn.payment_mode === 'CASH' ? 'bg-yellow-500/15 text-yellow-500' : 'bg-blue-500/15 text-blue-500'}`}>
                                                                     {txn.payment_mode}
                                                                 </span>
                                                             </div>
                                                             <div className="flex justify-between items-start gap-2">
                                                                 <div>
-                                                                    <span className="font-bold text-primary block text-sm">
-                                                                        {txn.ledger_name || txn.description || <span className="text-gray-600 italic">None</span>}
+                                                                    <span className="font-extrabold text-primary block text-sm">
+                                                                        {txn.ledger_name || txn.description || <span className="text-text-muted italic">None</span>}
                                                                     </span>
                                                                     {txn.description && (
-                                                                        <p className="text-xs text-gray-300 mt-1 font-medium">{txn.description}</p>
+                                                                        <p className="text-xs text-text-muted mt-1 font-semibold">{txn.description}</p>
                                                                     )}
                                                                 </div>
                                                                 <div className="text-right">
-                                                                    <span className={`font-bold ${['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
+                                                                    <span className={`font-bold font-mono text-xs ${['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? 'text-error' : 'text-emerald-500'}`}>
                                                                         {['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(txn.transaction_type) ? '-' : '+'}{parseFloat(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                     </span>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex justify-end gap-4 mt-1 pt-2 border-t border-gray-800/40">
-                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-blue-400 hover:text-blue-300 text-xs font-bold uppercase tracking-wider cursor-pointer">Edit</button>
-                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider cursor-pointer">Delete</button>
+                                                            <div className="flex justify-end gap-4 mt-1.5 pt-2 border-t border-border-main/30">
+                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleEdit(txn); }} className="text-primary hover:underline text-[11px] font-bold cursor-pointer">Edit</button>
+                                                                <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(txn.id); }} className="text-error hover:underline text-[11px] font-bold cursor-pointer">Delete</button>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -709,80 +713,80 @@ const MonthlyReport = () => {
                                         );
                                     })()}
                                 </div>
-                            </>
+                            </div>
                         )}
 
                         {activeTab === 'audit' && (
-                            <>
-                                <h3 className="text-lg sm:text-xl font-semibold mb-4 text-white">Inflows (Credits) vs Outflows (Debits) Audit</h3>
+                            <div className="space-y-4 animate-fade-in">
+                                <h3 className="text-base sm:text-lg font-extrabold text-text-main">Credit & Debit Audit</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                     {/* Credits Column */}
-                                    <div className="bg-card-dark rounded-xl p-5 border border-emerald-900/40 bg-gradient-to-br from-card-dark to-emerald-950/5">
-                                        <h4 className="font-bold text-emerald-400 text-base sm:text-lg mb-4 border-b border-emerald-900/40 pb-2 flex justify-between gap-2">
+                                    <div className="bg-card-dark rounded-2xl p-4 sm:p-5 border border-emerald-500/20 bg-gradient-to-br from-card-dark to-emerald-500/5">
+                                        <h4 className="font-extrabold text-emerald-500 text-sm sm:text-base mb-4 border-b border-border-main/60 pb-2 flex justify-between gap-2">
                                             <span>Total Credited (Inflows)</span>
-                                            <span>+{parseFloat(report.total_credit).toLocaleString()}</span>
+                                            <span>+₹{parseFloat(report.total_credit).toLocaleString()}</span>
                                         </h4>
                                         <ul className="space-y-3">
-                                            <li className="flex justify-between text-sm py-1 border-b border-gray-800">
-                                                <span className="text-gray-400">Standard Category Income</span>
-                                                <span className="font-semibold text-green-400">+{parseFloat(report.total_income).toLocaleString()}</span>
+                                            <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
+                                                <span className="text-text-muted">Standard Category Income</span>
+                                                <span className="font-bold text-emerald-500">+₹{parseFloat(report.total_income).toLocaleString()}</span>
                                             </li>
-                                            <li className="flex justify-between text-sm py-1 border-b border-gray-800">
-                                                <span className="text-gray-400">Debts Borrowed (Taken)</span>
-                                                <span className="font-semibold text-green-400">+{parseFloat(report.debt_breakdown?.debt_taken || 0).toLocaleString()}</span>
+                                            <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
+                                                <span className="text-text-muted">Debts Borrowed (Taken)</span>
+                                                <span className="font-bold text-emerald-500">+₹{parseFloat(report.debt_breakdown?.debt_taken || 0).toLocaleString()}</span>
                                             </li>
-                                            <li className="flex justify-between text-sm py-1 border-b border-gray-800">
-                                                <span className="text-gray-400">Debt Repayments Received</span>
-                                                <span className="font-semibold text-green-400">+{parseFloat(report.debt_breakdown?.debt_given_return || 0).toLocaleString()}</span>
+                                            <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
+                                                <span className="text-text-muted">Debt Repayments Received</span>
+                                                <span className="font-bold text-emerald-500">+₹{parseFloat(report.debt_breakdown?.debt_given_return || 0).toLocaleString()}</span>
                                             </li>
                                         </ul>
                                     </div>
 
                                     {/* Debits Column */}
-                                    <div className="bg-card-dark rounded-xl p-5 border border-orange-900/40 bg-gradient-to-br from-card-dark to-orange-950/5">
-                                        <h4 className="font-bold text-orange-400 text-base sm:text-lg mb-4 border-b border-orange-900/40 pb-2 flex justify-between gap-2">
+                                    <div className="bg-card-dark rounded-2xl p-4 sm:p-5 border border-rose-500/20 bg-gradient-to-br from-card-dark to-rose-500/5">
+                                        <h4 className="font-extrabold text-rose-500 text-sm sm:text-base mb-4 border-b border-border-main/60 pb-2 flex justify-between gap-2">
                                             <span>Total Debited (Outflows)</span>
-                                            <span>-{parseFloat(report.total_debit).toLocaleString()}</span>
+                                            <span>-₹{parseFloat(report.total_debit).toLocaleString()}</span>
                                         </h4>
                                         <ul className="space-y-3">
-                                            <li className="flex justify-between text-sm py-1 border-b border-gray-800">
-                                                <span className="text-gray-400">Standard Category Expenses</span>
-                                                <span className="font-semibold text-red-400">-{parseFloat(report.total_expense).toLocaleString()}</span>
+                                            <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
+                                                <span className="text-text-muted">Standard Category Expenses</span>
+                                                <span className="font-bold text-error">-₹{parseFloat(report.total_expense).toLocaleString()}</span>
                                             </li>
-                                            <li className="flex justify-between text-sm py-1 border-b border-gray-800">
-                                                <span className="text-gray-400">Investments Allocated</span>
-                                                <span className="font-semibold text-red-400">-{parseFloat(report.total_investment).toLocaleString()}</span>
+                                            <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
+                                                <span className="text-text-muted">Investments Allocated</span>
+                                                <span className="font-bold text-error">-₹{parseFloat(report.total_investment).toLocaleString()}</span>
                                             </li>
-                                            <li className="flex justify-between text-sm py-1 border-b border-gray-800">
-                                                <span className="text-gray-400">Debts Given (Lent Out)</span>
-                                                <span className="font-semibold text-red-400">-{parseFloat(report.debt_breakdown?.debt_given || 0).toLocaleString()}</span>
+                                            <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
+                                                <span className="text-text-muted">Debts Given (Lent Out)</span>
+                                                <span className="font-bold text-error">-₹{parseFloat(report.debt_breakdown?.debt_given || 0).toLocaleString()}</span>
                                             </li>
-                                            <li className="flex justify-between text-sm py-1 border-b border-gray-800">
-                                                <span className="text-gray-400">Debt Repayments Made</span>
-                                                <span className="font-semibold text-red-400">-{parseFloat(report.debt_breakdown?.debt_taken_return || 0).toLocaleString()}</span>
+                                            <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
+                                                <span className="text-text-muted">Debt Repayments Made</span>
+                                                <span className="font-bold text-error">-₹{parseFloat(report.debt_breakdown?.debt_taken_return || 0).toLocaleString()}</span>
                                             </li>
                                         </ul>
                                     </div>
                                 </div>
-                            </>
+                            </div>
                         )}
 
                         {activeTab === 'comparison' && (
-                            <>
-                                <h3 className="text-lg sm:text-xl font-semibold mb-4 text-white">Category-wise Monthly Comparison (Expenses)</h3>
+                            <div className="space-y-4 animate-fade-in">
+                                <h3 className="text-base sm:text-lg font-extrabold text-text-main">Category Comparison (Expenses)</h3>
                                 
                                 {/* Selected months list */}
                                 <div className="flex flex-wrap gap-2 mb-4 items-center">
-                                    <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Compared Months:</span>
+                                    <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Compared Months:</span>
                                     {comparisonMonths.map((m, idx) => (
-                                        <div key={idx} className="flex items-center gap-1.5 bg-gray-800 border border-gray-700 rounded-full px-3 py-1 text-xs">
-                                            <span className="text-white font-medium">
+                                        <div key={idx} className="flex items-center gap-1.5 bg-bg-dark border border-border-main rounded-full px-3 py-1 text-xs">
+                                            <span className="text-text-main font-semibold">
                                                 {new Date(0, m.month - 1).toLocaleString('default', { month: 'short' })} {m.year}
                                             </span>
                                             <button 
                                                 type="button"
                                                 onClick={() => handleRemoveMonth(idx)} 
-                                                className="text-red-400 hover:text-red-300 font-bold ml-1 cursor-pointer text-xs focus:outline-none"
+                                                className="text-error hover:text-red-400 font-bold ml-1 cursor-pointer text-xs focus:outline-none"
                                                 title="Remove month"
                                             >
                                                 ×
@@ -792,12 +796,12 @@ const MonthlyReport = () => {
                                 </div>
 
                                 {/* Month adder controls */}
-                                <div className="flex flex-wrap gap-2.5 items-center bg-gray-850 p-3 rounded-lg border border-gray-800 mb-6 w-max max-w-full">
+                                <div className="flex flex-wrap gap-2.5 items-center bg-bg-dark/40 p-3 rounded-xl border border-border-main w-max max-w-full">
                                     <div className="flex items-center gap-2">
                                         <select 
                                             value={selectedCompareMonth} 
                                             onChange={(e) => setSelectedCompareMonth(parseInt(e.target.value))} 
-                                            className="bg-gray-800 text-white border border-gray-700 rounded px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer"
+                                            className="bg-bg-dark text-text-main border border-border-main rounded-lg px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer font-semibold"
                                         >
                                             {Array.from({ length: 12 }, (_, i) => (
                                                 <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
@@ -806,7 +810,7 @@ const MonthlyReport = () => {
                                         <select 
                                             value={selectedCompareYear} 
                                             onChange={(e) => setSelectedCompareYear(parseInt(e.target.value))} 
-                                            className="bg-gray-800 text-white border border-gray-700 rounded px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer"
+                                            className="bg-bg-dark text-text-main border border-border-main rounded-lg px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer font-semibold"
                                         >
                                             <option value="2025">2025</option>
                                             <option value="2026">2026</option>
@@ -815,24 +819,24 @@ const MonthlyReport = () => {
                                     <button 
                                         type="button"
                                         onClick={handleAddMonth} 
-                                        className="bg-primary hover:bg-opacity-95 text-white px-3.5 py-1.5 rounded text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0"
+                                        className="bg-primary hover:bg-primary-hover text-black px-4 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold transition-all cursor-pointer shrink-0 shadow"
                                     >
                                         + Add Month
                                     </button>
                                 </div>
 
                                 {comparisonLoading ? (
-                                    <div className="text-center py-12">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
-                                        <p className="text-gray-400 text-xs">Loading comparison data...</p>
+                                    <div className="text-center py-20 flex flex-col justify-center items-center gap-2">
+                                        <div className="w-6 h-6 border-3 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                                        <p className="text-text-muted text-xs font-semibold">Comparing datasets...</p>
                                     </div>
                                 ) : comparisonResults ? (
                                     <>
                                         {/* Table view */}
-                                        <div className="bg-card-dark rounded-xl shadow-xl border border-gray-700/50 overflow-hidden mb-8">
+                                        <div className="bg-card-dark rounded-2xl shadow border border-border-main overflow-hidden mb-8 animate-fade-in">
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-left text-sm">
-                                                    <thead className="bg-gray-800 text-gray-400 uppercase text-[10px] sm:text-xs tracking-wider">
+                                                    <thead className="bg-bg-dark/40 text-text-muted uppercase text-[10px] font-bold border-b border-border-main">
                                                         <tr>
                                                             <th className="px-5 py-3.5">Category</th>
                                                             {comparisonResults.monthLabels.map((label, idx) => (
@@ -840,32 +844,32 @@ const MonthlyReport = () => {
                                                             ))}
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-gray-800">
+                                                    <tbody className="divide-y divide-border-main/50">
                                                         {comparisonResults.rows.length === 0 ? (
                                                             <tr>
-                                                                <td colSpan={comparisonResults.monthLabels.length + 1} className="px-5 py-8 text-center text-gray-500 italic">
+                                                                <td colSpan={comparisonResults.monthLabels.length + 1} className="px-5 py-8 text-center text-text-muted italic">
                                                                     No expenses recorded in the compared months.
                                                                 </td>
                                                             </tr>
                                                         ) : (
                                                             <>
                                                                 {comparisonResults.rows.map((row, idx) => (
-                                                                    <tr key={idx} className="hover:bg-gray-800/40 transition-colors">
-                                                                        <td className="px-5 py-3 font-semibold text-gray-300">{row.category}</td>
+                                                                    <tr key={idx} className="hover:bg-bg-dark/20 transition-colors">
+                                                                        <td className="px-5 py-3 font-extrabold text-text-main text-xs">{row.category}</td>
                                                                         {comparisonResults.monthLabels.map((label, lIdx) => (
-                                                                            <td key={lIdx} className="px-5 py-3 text-right font-mono text-gray-300">
+                                                                            <td key={lIdx} className="px-5 py-3 text-right font-mono text-text-muted text-xs font-semibold">
                                                                                 {row[label] > 0 ? `₹${row[label].toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
                                                                             </td>
                                                                         ))}
                                                                     </tr>
                                                                 ))}
                                                                 {/* Totals Row */}
-                                                                <tr className="bg-gray-800/30 border-t-2 border-gray-700 font-bold text-white">
-                                                                    <td className="px-5 py-4 uppercase text-xs tracking-wider">Total Expenses</td>
+                                                                <tr className="bg-bg-dark/30 border-t border-border-main font-bold text-text-main">
+                                                                    <td className="px-5 py-4 uppercase text-xs tracking-wider font-extrabold text-primary">Total Expenses</td>
                                                                     {comparisonResults.monthLabels.map((label, idx) => {
                                                                         const totalVal = comparisonResults.rows.reduce((sum, r) => sum + (r[label] || 0), 0);
                                                                         return (
-                                                                            <td key={idx} className="px-5 py-4 text-right font-mono text-base text-secondary">
+                                                                            <td key={idx} className="px-5 py-4 text-right font-mono text-base font-black text-secondary">
                                                                                 ₹{totalVal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                             </td>
                                                                         );
@@ -880,24 +884,24 @@ const MonthlyReport = () => {
 
                                         {/* Chart visualization */}
                                         {comparisonResults.rows.length > 0 && (
-                                            <div className="bg-card-dark p-5 rounded-xl border border-gray-700/50 shadow-xl mb-8">
-                                                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Spending Trends by Category</h4>
+                                            <div className="bg-card-dark p-4 sm:p-5 rounded-2xl border border-border-main shadow mb-8 animate-fade-in">
+                                                <h4 className="text-xs font-black text-text-muted uppercase tracking-widest mb-4">Spending Trends</h4>
                                                 <div className="w-full h-80 sm:h-96">
                                                     <ResponsiveContainer width="100%" height="100%">
                                                         <BarChart
                                                             data={comparisonResults.rows}
                                                             margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
                                                         >
-                                                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                                            <XAxis dataKey="category" stroke="#9ca3af" fontSize={11} tickLine={false} />
-                                                            <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} tickFormatter={(val) => `₹${val}`} />
+                                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-main)" opacity={0.5} />
+                                                            <XAxis dataKey="category" stroke="var(--text-muted)" fontSize={10} fontWeight="bold" tickLine={false} />
+                                                            <YAxis stroke="var(--text-muted)" fontSize={10} fontWeight="bold" tickLine={false} tickFormatter={(val) => `₹${val}`} />
                                                             <Tooltip 
-                                                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '8px' }}
-                                                                itemStyle={{ color: '#fff', fontSize: '12px' }}
-                                                                labelStyle={{ color: '#9ca3af', fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}
+                                                                contentStyle={{ backgroundColor: 'var(--card-dark)', borderColor: 'var(--border-main)', borderRadius: '12px' }}
+                                                                itemStyle={{ color: 'var(--text-main)', fontSize: '11px', fontWeight: 'semibold' }}
+                                                                labelStyle={{ color: 'var(--text-muted)', fontWeight: 'bold', fontSize: '11px', marginBottom: '4px' }}
                                                                 formatter={(value) => [`₹${parseFloat(value).toLocaleString()}`, '']}
                                                             />
-                                                            <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+                                                            <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '11px', fontWeight: 'semibold' }} />
                                                             {comparisonResults.monthLabels.map((label, idx) => (
                                                                 <Bar 
                                                                     key={idx} 
@@ -913,7 +917,7 @@ const MonthlyReport = () => {
                                         )}
                                     </>
                                 ) : null}
-                            </>
+                            </div>
                         )}
                     </div>
                 </>
@@ -921,15 +925,22 @@ const MonthlyReport = () => {
 
             {/* Placeholder for other types */}
             {reportType !== 'monthly' && (
-                <div className="text-center py-12 text-gray-500 bg-card-dark rounded border border-gray-700 border-dashed">
-                    <p className="text-lg">Preview not available for {reportType} reports.</p>
-                    <p className="text-sm">Please use the "Download PDF" button to view the report.</p>
+                <div className="text-center py-16 text-text-muted bg-card-dark rounded-2xl border border-border-main border-dashed animate-fade-in">
+                    <p className="text-sm font-semibold">Preview not active for {reportType} logs.</p>
+                    <p className="text-xs text-text-muted mt-1.5 mb-4">Please download the PDF report to view complete daily, weekly, or yearly transaction charts.</p>
+                    <button 
+                        onClick={handleDownloadPDF}
+                        className="bg-primary hover:bg-primary-hover text-black font-extrabold py-2 px-5 rounded-xl text-xs transition-colors cursor-pointer shadow inline-flex items-center gap-2"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        <span>Download Statement</span>
+                    </button>
                 </div>
             )}
 
             {/* Editing Modal */}
             {editingTransaction && (
-                <div className="fixed inset-0 bg-black/60 overflow-y-auto flex items-start justify-center p-4 z-50 backdrop-blur-sm">
+                <div className="fixed inset-0 bg-black/75 overflow-y-auto flex items-start justify-center p-4 z-50 backdrop-blur-sm animate-fade-in">
                     <div className="w-full max-w-4xl my-auto relative">
                         <TransactionForm 
                             onTransactionAdded={fetchReportData}
@@ -943,7 +954,7 @@ const MonthlyReport = () => {
 
             {/* Investment Prefill Modal */}
             {prefillInvestment && (
-                <div className="fixed inset-0 bg-black/60 overflow-y-auto flex items-start justify-center p-4 z-50 backdrop-blur-sm">
+                <div className="fixed inset-0 bg-black/75 overflow-y-auto flex items-start justify-center p-4 z-50 backdrop-blur-sm animate-fade-in">
                     <div className="w-full max-w-4xl my-auto relative">
                         <TransactionForm 
                             onTransactionAdded={() => {
@@ -961,53 +972,53 @@ const MonthlyReport = () => {
             {/* Detailed Transaction Modal */}
             {detailedTransaction && (
                 <div className="fixed inset-0 bg-black/75 overflow-y-auto flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-card-dark border border-gray-700 rounded-xl p-6 w-full max-w-lg shadow-2xl relative">
+                    <div className="bg-card-dark border border-border-main rounded-2xl p-6 w-full max-w-lg shadow-2xl relative">
                         <button 
                             type="button"
                             onClick={() => setDetailedTransaction(null)} 
-                            className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold font-sans cursor-pointer focus:outline-none"
+                            className="absolute top-4 right-4 text-text-muted hover:text-text-main text-xl font-bold font-sans cursor-pointer focus:outline-none"
                         >
                             ×
                         </button>
-                        <h3 className="text-xl font-bold text-secondary mb-4 flex items-center gap-2 border-b border-gray-800 pb-2">
-                            🤝 Debt Transaction Details
+                        <h3 className="text-lg font-black text-secondary mb-4 flex items-center gap-2 border-b border-border-main pb-2">
+                            🤝 Debt Statement Info
                         </h3>
                         
                         <div className="space-y-4 text-sm">
-                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-800/40">
-                                <span className="text-gray-400 font-medium">Date:</span>
-                                <span className="col-span-2 text-white font-semibold">{detailedTransaction.date}</span>
+                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-border-main/55 font-semibold">
+                                <span className="text-text-muted">Date:</span>
+                                <span className="col-span-2 text-text-main">{detailedTransaction.date}</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-800/40">
-                                <span className="text-gray-400 font-medium">Type:</span>
-                                <span className={`col-span-2 font-bold ${['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(detailedTransaction.transaction_type) ? 'text-red-400' : 'text-green-400'}`}>
+                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-border-main/55 font-semibold">
+                                <span className="text-text-muted">Type:</span>
+                                <span className={`col-span-2 font-bold uppercase text-xs ${['EXPENSE', 'DEBT_GIVEN', 'DEBT_TAKEN_RETURN'].includes(detailedTransaction.transaction_type) ? 'text-error' : 'text-emerald-500'}`}>
                                     {detailedTransaction.transaction_type.replace(/_/g, ' ')}
                                 </span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-800/40">
-                                <span className="text-gray-400 font-medium">Amount:</span>
-                                <span className="col-span-2 text-white font-bold text-base font-mono">
+                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-border-main/55 font-semibold">
+                                <span className="text-text-muted">Amount:</span>
+                                <span className="col-span-2 text-text-main font-bold text-base font-mono">
                                     ₹{parseFloat(detailedTransaction.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-800/40">
-                                <span className="text-gray-400 font-medium">Person (Ledger):</span>
+                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-border-main/55 font-semibold">
+                                <span className="text-text-muted">Person (Ledger):</span>
                                 <span className="col-span-2 text-primary font-bold">
                                     {detailedTransaction.ledger_name || detailedTransaction.description || 'No linked ledger'}
                                 </span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-800/40">
-                                <span className="text-gray-400 font-medium">Payment Mode:</span>
+                            <div className="grid grid-cols-3 gap-2 py-2 border-b border-border-main/55 font-semibold">
+                                <span className="text-text-muted">Payment Mode:</span>
                                 <span className="col-span-2">
-                                    <span className={`px-2.5 py-0.5 rounded text-xs font-bold ${detailedTransaction.payment_mode === 'CASH' ? 'bg-yellow-900/60 text-yellow-200 border border-yellow-800/40' : 'bg-blue-900/60 text-blue-200 border border-blue-800/40'}`}>
+                                    <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold ${detailedTransaction.payment_mode === 'CASH' ? 'bg-yellow-500/15 text-yellow-500 border border-yellow-500/20' : 'bg-blue-500/15 text-blue-500 border border-blue-500/20'}`}>
                                         {detailedTransaction.payment_mode}
                                     </span>
                                 </span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 py-2">
-                                <span className="text-gray-400 font-medium">Description:</span>
-                                <span className="col-span-2 text-gray-200 bg-gray-900/50 p-2.5 rounded border border-gray-800/60 whitespace-pre-wrap font-sans text-xs">
-                                    {detailedTransaction.description || <span className="text-gray-500 italic">None</span>}
+                            <div className="grid grid-cols-3 gap-2 py-2 font-semibold">
+                                <span className="text-text-muted">Description:</span>
+                                <span className="col-span-2 text-text-muted bg-bg-dark p-2.5 rounded-xl border border-border-main whitespace-pre-wrap font-sans text-xs">
+                                    {detailedTransaction.description || <span className="text-text-muted italic font-normal">None</span>}
                                 </span>
                             </div>
                         </div>
@@ -1016,7 +1027,7 @@ const MonthlyReport = () => {
                             <button 
                                 type="button"
                                 onClick={() => setDetailedTransaction(null)} 
-                                className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors cursor-pointer"
+                                className="bg-bg-dark border border-border-main text-text-muted hover:text-text-main font-extrabold py-2 px-4 rounded-xl transition-all cursor-pointer text-xs"
                             >
                                 Close
                             </button>

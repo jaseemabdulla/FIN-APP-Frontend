@@ -262,7 +262,7 @@ const FundList = () => {
     };
 
     const formatCurrency = (val) => {
-        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(val);
     };
 
     // Helper for timeline items styling and icons
@@ -270,25 +270,25 @@ const FundList = () => {
         switch (type) {
             case 'INITIAL_FUND':
                 return (
-                    <div className="w-8 h-8 rounded-full bg-emerald-950 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 font-semibold text-xs animate-pulse">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-semibold text-xs shadow-sm">
                         🚀
                     </div>
                 );
             case 'ADDITIONAL_FUND':
                 return (
-                    <div className="w-8 h-8 rounded-full bg-secondary/20 border-2 border-secondary flex items-center justify-center text-secondary font-semibold text-xs">
+                    <div className="w-8 h-8 rounded-full bg-secondary/15 border border-secondary/30 flex items-center justify-center text-secondary font-semibold text-xs shadow-sm">
                         ➕
                     </div>
                 );
             case 'EXPENSE':
                 return (
-                    <div className="w-8 h-8 rounded-full bg-error/20 border-2 border-error flex items-center justify-center text-error font-semibold text-xs">
+                    <div className="w-8 h-8 rounded-full bg-error/15 border border-error/30 flex items-center justify-center text-error font-semibold text-xs shadow-sm">
                         💸
                     </div>
                 );
             case 'SETTLEMENT':
                 return (
-                    <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-semibold text-xs">
+                    <div className="w-8 h-8 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-semibold text-xs shadow-sm">
                         🏁
                     </div>
                 );
@@ -299,8 +299,9 @@ const FundList = () => {
 
     if (loading && !reports) {
         return (
-            <div className="max-w-4xl mx-auto p-4 text-center text-gray-400">
-                <div className="animate-pulse py-8 text-primary">Loading Fund Manager...</div>
+            <div className="max-w-4xl mx-auto p-4 text-center py-20 flex flex-col justify-center items-center gap-3">
+                <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                <p className="text-text-muted text-sm font-semibold">Loading Fund Manager...</p>
             </div>
         );
     }
@@ -309,63 +310,63 @@ const FundList = () => {
     const displayedFunds = activeTab === 'ACTIVE' ? active_funds : settled_funds;
 
     return (
-        <div className="max-w-4xl mx-auto p-4 space-y-6">
+        <div className="max-w-4xl mx-auto px-4 space-y-6 text-text-main animate-fade-in">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
-                     <h2 className="text-3xl font-bold text-primary tracking-tight">Fund Management</h2>
-                     <p className="text-sm text-gray-500 mt-1">Track money received for specific purposes and their expenses independently.</p>
+                     <h2 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">Fund Management</h2>
+                     <p className="text-xs sm:text-sm text-text-muted mt-0.5">Track specialized funding (events, grants, sponsorships) separate from personal cashflow.</p>
                 </div>
                 <button 
                     onClick={() => setShowCreateModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-purple-600 hover:from-purple-500 hover:to-primary text-white rounded-lg text-sm font-bold shadow-lg transition-all transform hover:-translate-y-0.5"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-secondary text-black rounded-xl text-sm font-extrabold transition-transform active:scale-95 cursor-pointer shadow-lg w-full sm:w-auto"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
                     Create New Fund
                 </button>
             </div>
 
             {/* Overall Summary Cards */}
             {summary && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-card-dark p-4 rounded-xl border border-gray-800 shadow-md">
-                        <span className="text-xs text-gray-500 font-semibold block uppercase">Total Funds Received</span>
-                        <span className="text-xl font-bold text-emerald-400 mt-1 block">{formatCurrency(summary.total_received)}</span>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
+                    <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/20 shadow-md">
+                        <span className="text-[10px] text-text-muted font-bold block uppercase tracking-wider">Total Received</span>
+                        <span className="text-lg sm:text-xl font-black text-emerald-500 mt-1 block">{formatCurrency(summary.total_received)}</span>
                     </div>
-                    <div className="bg-card-dark p-4 rounded-xl border border-gray-800 shadow-md">
-                        <span className="text-xs text-gray-500 font-semibold block uppercase">Total Amount Spent</span>
-                        <span className="text-xl font-bold text-error mt-1 block">{formatCurrency(summary.total_spent)}</span>
+                    <div className="bg-rose-500/5 p-4 rounded-2xl border border-rose-500/20 shadow-md">
+                        <span className="text-[10px] text-text-muted font-bold block uppercase tracking-wider">Total Spent</span>
+                        <span className="text-lg sm:text-xl font-black text-rose-500 mt-1 block">{formatCurrency(summary.total_spent)}</span>
                     </div>
-                    <div className="bg-card-dark p-4 rounded-xl border border-gray-800 shadow-md">
-                        <span className="text-xs text-gray-500 font-semibold block uppercase">Remaining Balance</span>
-                        <span className="text-xl font-bold text-secondary mt-1 block">{formatCurrency(summary.remaining_balance)}</span>
+                    <div className="bg-secondary/5 p-4 rounded-2xl border border-secondary/20 shadow-md">
+                        <span className="text-[10px] text-text-muted font-bold block uppercase tracking-wider">Remaining</span>
+                        <span className="text-lg sm:text-xl font-black text-secondary mt-1 block">{formatCurrency(summary.remaining_balance)}</span>
                     </div>
-                    <div className="bg-card-dark p-4 rounded-xl border border-gray-800 shadow-md">
-                        <span className="text-xs text-gray-500 font-semibold block uppercase">Active / Settled Count</span>
-                        <span className="text-xl font-bold text-primary mt-1 block">{summary.active_count} Active / {summary.settled_count} Settled</span>
+                    <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 shadow-md">
+                        <span className="text-[10px] text-text-muted font-bold block uppercase tracking-wider">Active / Closed</span>
+                        <span className="text-lg sm:text-xl font-black text-primary mt-1 block">{summary.active_count}A / {summary.settled_count}C</span>
                     </div>
                 </div>
             )}
 
             {/* Fund Selection detail view */}
             {selectedFund && (
-                <div className="bg-card-dark p-6 rounded-2xl border border-gray-700 shadow-2xl animate-fade-in space-y-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 pb-4 gap-4">
+                <div className="bg-card-dark p-5 sm:p-6 rounded-2xl border border-border-main shadow-2xl animate-fade-in space-y-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border-main pb-4 gap-4">
                         <div>
                             <div className="flex items-center gap-3">
-                                <h3 className="text-2xl font-bold text-primary">{selectedFund.title}</h3>
-                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                                    selectedFund.status === 'ACTIVE' ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/80' : 'bg-gray-800 text-gray-400 border border-gray-700'
+                                <h3 className="text-xl sm:text-2xl font-black text-primary">{selectedFund.title}</h3>
+                                <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                    selectedFund.status === 'ACTIVE' ? 'bg-success/15 text-success border-success/20' : 'bg-bg-dark text-text-muted border-border-main'
                                 }`}>
                                     {selectedFund.status}
                                 </span>
                             </div>
-                            <p className="text-gray-400 text-sm mt-1.5"><strong className="text-gray-300">Provider:</strong> {selectedFund.provider} | <strong className="text-gray-300">Purpose:</strong> {selectedFund.purpose}</p>
+                            <p className="text-text-muted text-xs sm:text-sm mt-1.5"><strong className="text-text-main font-semibold">Provider:</strong> {selectedFund.provider} | <strong className="text-text-main font-semibold">Purpose:</strong> {selectedFund.purpose}</p>
                             {selectedFund.notes && (
-                                <p className="text-xs text-gray-500 mt-1"><strong className="text-gray-400">Notes:</strong> {selectedFund.notes}</p>
+                                <p className="text-[11px] text-text-muted mt-1"><strong className="text-text-muted">Notes:</strong> {selectedFund.notes}</p>
                             )}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2 w-full md:w-auto">
                             {selectedFund.status === 'ACTIVE' ? (
                                 <button 
                                     onClick={() => {
@@ -376,27 +377,27 @@ const FundList = () => {
                                         }));
                                         setShowSettleModal(true);
                                     }}
-                                    className="px-4 py-1.5 bg-emerald-800 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                                    className="flex-1 md:flex-initial px-4 py-2 bg-success text-black rounded-xl text-xs font-extrabold transition-all cursor-pointer active:scale-95 shadow"
                                 >
                                     Settle/Close
                                 </button>
                             ) : (
                                 <button 
                                     onClick={() => handleReopen(selectedFund.id)}
-                                    className="px-4 py-1.5 bg-yellow-800 hover:bg-yellow-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                                    className="flex-1 md:flex-initial px-4 py-2 bg-warning text-black rounded-xl text-xs font-extrabold transition-all cursor-pointer active:scale-95 shadow"
                                 >
                                     Reopen Fund
                                 </button>
                             )}
                             <button 
                                 onClick={() => handleDeleteFund(selectedFund.id)}
-                                className="px-3 py-1.5 bg-red-950/40 hover:bg-red-900 border border-red-800/60 text-red-400 rounded-lg text-sm font-semibold transition-colors"
+                                className="flex-1 md:flex-initial px-4 py-2 bg-error/15 hover:bg-error/25 border border-error/20 text-error rounded-xl text-xs font-extrabold transition-colors cursor-pointer"
                             >
-                                Delete Fund
+                                Delete
                             </button>
                             <button 
                                 onClick={() => setSelectedFund(null)}
-                                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 hover:text-white rounded-lg text-sm font-semibold transition-colors"
+                                className="px-4 py-2 bg-bg-dark border border-border-main text-text-muted hover:text-text-main rounded-xl text-xs font-extrabold transition-colors cursor-pointer"
                             >
                                 Close Detail
                             </button>
@@ -404,39 +405,39 @@ const FundList = () => {
                     </div>
 
                     {/* Detail calculations */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-bg-dark/50 p-4 rounded-xl border border-gray-800">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-bg-dark/40 p-4 rounded-xl border border-border-main">
                         <div>
-                            <span className="text-xs text-gray-500 block">Total Fund Received</span>
-                            <span className="text-lg font-bold text-emerald-400">{formatCurrency(selectedFund.total_received)}</span>
+                            <span className="text-[10px] text-text-muted uppercase font-bold block mb-0.5">Received Budget</span>
+                            <span className="text-base font-bold text-emerald-500">{formatCurrency(selectedFund.total_received)}</span>
                         </div>
                         <div>
-                            <span className="text-xs text-gray-500 block">Total Amount Spent</span>
-                            <span className="text-lg font-bold text-error">{formatCurrency(selectedFund.total_spent)}</span>
+                            <span className="text-[10px] text-text-muted uppercase font-bold block mb-0.5">Total Spent</span>
+                            <span className="text-base font-bold text-error">{formatCurrency(selectedFund.total_spent)}</span>
                         </div>
                         <div>
-                            <span className="text-xs text-gray-500 block">Remaining Balance</span>
-                            <span className={`text-lg font-bold ${parseFloat(selectedFund.remaining_balance) >= 0 ? 'text-secondary' : 'text-error'}`}>
+                            <span className="text-[10px] text-text-muted uppercase font-bold block mb-0.5">Remaining Balance</span>
+                            <span className={`text-base font-bold ${parseFloat(selectedFund.remaining_balance) >= 0 ? 'text-secondary' : 'text-error'}`}>
                                 {formatCurrency(selectedFund.remaining_balance)}
                             </span>
                         </div>
                         <div>
-                            <span className="text-xs text-gray-500 block">Transactions Count</span>
-                            <span className="text-lg font-bold text-primary">{selectedFund.number_of_transactions}</span>
+                            <span className="text-[10px] text-text-muted uppercase font-bold block mb-0.5">Activity Count</span>
+                            <span className="text-base font-bold text-primary">{selectedFund.number_of_transactions} actions</span>
                         </div>
                     </div>
 
                     {/* Action buttons inside selected fund */}
                     {selectedFund.status === 'ACTIVE' && (
-                        <div className="flex flex-wrap gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                             <button 
                                 onClick={() => setShowAdditionModal(true)}
-                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-sm font-bold text-secondary flex items-center gap-1.5 transition-colors"
+                                className="flex-1 py-2.5 bg-bg-dark hover:bg-bg-dark/80 border border-border-main rounded-xl text-xs font-extrabold text-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm"
                             >
-                                ➕ Add Additional Money
+                                ➕ Add Money to Budget
                             </button>
                             <button 
                                 onClick={() => setShowExpenseModal(true)}
-                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-sm font-bold text-error flex items-center gap-1.5 transition-colors"
+                                className="flex-1 py-2.5 bg-bg-dark hover:bg-bg-dark/80 border border-border-main rounded-xl text-xs font-extrabold text-error flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm"
                             >
                                 💸 Record Fund Expense
                             </button>
@@ -444,16 +445,16 @@ const FundList = () => {
                     )}
 
                     {/* Chronological Timeline */}
-                    <div className="space-y-4">
-                        <h4 className="text-lg font-bold text-gray-200">Chronological Timeline</h4>
-                        <div className="relative border-l border-gray-800 ml-4 pl-6 space-y-6">
+                    <div className="space-y-4 pt-2">
+                        <h4 className="text-base font-extrabold text-text-main">Activity Ledger Timeline</h4>
+                        <div className="relative border-l-2 border-border-main ml-4 pl-6 space-y-6">
                             {selectedFund.timeline && selectedFund.timeline.map((item) => (
                                 <div key={item.id} className="relative group">
                                     {/* Timeline dot */}
                                     <div className="absolute -left-10 top-0.5">
                                         {renderTimelineIcon(item.type)}
                                     </div>
-                                    <div className="bg-bg-dark/40 p-4 rounded-xl border border-gray-800/80 shadow-sm relative hover:border-gray-700 transition-colors">
+                                    <div className="bg-bg-dark/30 p-4 rounded-xl border border-border-main shadow-sm relative hover:border-border-main/80 transition-colors">
                                         
                                         {/* Action deletion buttons */}
                                         {selectedFund.status === 'ACTIVE' && (
@@ -461,7 +462,7 @@ const FundList = () => {
                                                 {item.type === 'ADDITIONAL_FUND' && (
                                                     <button 
                                                         onClick={() => handleDeleteAddition(item.id.replace('addition_', ''))}
-                                                        className="text-xs text-red-400 hover:text-red-500 bg-red-950/20 px-2 py-0.5 border border-red-900 rounded"
+                                                        className="text-[10px] text-error hover:text-red-400 bg-error/10 px-2 py-0.5 border border-error/20 rounded cursor-pointer font-bold"
                                                     >
                                                         Delete
                                                     </button>
@@ -469,7 +470,7 @@ const FundList = () => {
                                                 {item.type === 'EXPENSE' && (
                                                     <button 
                                                         onClick={() => handleDeleteExpense(item.id.replace('expense_', ''))}
-                                                        className="text-xs text-red-400 hover:text-red-500 bg-red-950/20 px-2 py-0.5 border border-red-900 rounded"
+                                                        className="text-[10px] text-error hover:text-red-400 bg-error/10 px-2 py-0.5 border border-error/20 rounded cursor-pointer font-bold"
                                                     >
                                                         Delete
                                                     </button>
@@ -480,15 +481,15 @@ const FundList = () => {
                                         <div className="flex justify-between items-start gap-4">
                                             <div>
                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="text-sm font-semibold text-gray-200">{item.title}</span>
+                                                    <span className="text-sm font-bold text-text-main">{item.title}</span>
                                                     {item.category && (
-                                                        <span className="px-2 py-0.5 bg-gray-800 text-gray-400 rounded text-[10px] uppercase font-bold tracking-wide">
+                                                        <span className="px-2 py-0.5 bg-card-dark text-text-muted rounded text-[9px] uppercase font-bold tracking-wide border border-border-main/50">
                                                             {item.category}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <span className="text-xs text-gray-500 mt-1 block">{item.date}</span>
-                                                <p className="text-xs text-gray-400 mt-2 leading-relaxed">{item.notes || item.description}</p>
+                                                <span className="text-[10px] text-text-muted font-semibold mt-1 block">{item.date}</span>
+                                                <p className="text-xs text-text-muted mt-2 leading-relaxed">{item.notes || item.description}</p>
                                                 
                                                 {/* Attachment Section */}
                                                 {item.attachment_url && (
@@ -497,13 +498,13 @@ const FundList = () => {
                                                             href={item.attachment_url.startsWith('http') ? item.attachment_url : `${BACKEND_URL}${item.attachment_url}`} 
                                                             target="_blank" 
                                                             rel="noopener noreferrer"
-                                                            className="inline-flex items-center gap-1.5 text-xs text-secondary hover:underline bg-secondary/10 px-2.5 py-1 rounded border border-secondary/20"
+                                                            className="inline-flex items-center gap-1.5 text-[11px] text-secondary hover:underline bg-secondary/10 px-2.5 py-1 rounded border border-secondary/20 font-bold"
                                                         >
                                                             <span>📄 View Receipt/Attachment</span>
                                                         </a>
                                                         {/* Optional thumbnail if image */}
                                                         {/\.(jpg|jpeg|png|webp|gif)$/i.test(item.attachment_url) && (
-                                                            <div className="mt-2 rounded-lg border border-gray-805 overflow-hidden w-24 h-24 bg-black flex items-center justify-center">
+                                                            <div className="mt-2 rounded-xl border border-border-main overflow-hidden w-20 h-20 bg-black flex items-center justify-center shadow-sm">
                                                                 <img 
                                                                     src={item.attachment_url.startsWith('http') ? item.attachment_url : `${BACKEND_URL}${item.attachment_url}`} 
                                                                     alt="receipt thumb"
@@ -516,21 +517,21 @@ const FundList = () => {
                                             </div>
                                             <div className="text-right">
                                                 {item.type === 'EXPENSE' ? (
-                                                    <span className="text-base font-extrabold text-error">-{formatCurrency(item.amount)}</span>
+                                                    <span className="text-sm sm:text-base font-extrabold text-error">-{formatCurrency(item.amount)}</span>
                                                 ) : item.type === 'INITIAL_FUND' || item.type === 'ADDITIONAL_FUND' ? (
-                                                    <span className="text-base font-extrabold text-emerald-400">+{formatCurrency(item.amount)}</span>
+                                                    <span className="text-sm sm:text-base font-extrabold text-emerald-500">+{formatCurrency(item.amount)}</span>
                                                 ) : item.type === 'SETTLEMENT' ? (
                                                     <div className="space-y-1 text-right text-xs">
                                                         {item.returned_amount > 0 && (
                                                             <div>
-                                                                <span className="text-gray-500 block">Returned</span>
-                                                                <span className="text-sm font-bold text-emerald-400">{formatCurrency(item.returned_amount)}</span>
+                                                                <span className="text-text-muted block text-[10px]">Returned</span>
+                                                                <span className="text-xs sm:text-sm font-extrabold text-emerald-500">{formatCurrency(item.returned_amount)}</span>
                                                             </div>
                                                         )}
                                                         {item.additional_amount_required > 0 && (
                                                             <div>
-                                                                <span className="text-gray-500 block">Exceeded Cost</span>
-                                                                <span className="text-sm font-bold text-error">{formatCurrency(item.additional_amount_required)}</span>
+                                                                <span className="text-text-muted block text-[10px]">Exceeded Cost</span>
+                                                                <span className="text-xs sm:text-sm font-extrabold text-error">{formatCurrency(item.additional_amount_required)}</span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -545,27 +546,27 @@ const FundList = () => {
                 </div>
             )}
 
-            {/* Tabs for active vs settled funds */}
-            <div className="flex border-b border-gray-805">
+            {/* Tabs / Segmented Control */}
+            <div className="flex border-b border-border-main bg-bg-dark/40 rounded-xl overflow-hidden p-1 border">
                 <button 
                     onClick={() => setActiveTab('ACTIVE')}
-                    className={`flex-1 py-3 text-sm font-bold transition-all border-b-2 text-center ${
+                    className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-all text-center rounded-lg cursor-pointer ${
                         activeTab === 'ACTIVE' 
-                        ? 'border-primary text-primary' 
-                        : 'border-transparent text-gray-400 hover:text-white'
+                        ? 'bg-card-dark text-primary shadow' 
+                        : 'text-text-muted hover:text-text-main'
                     }`}
                 >
-                    🟢 Active Purpose Funds ({active_funds.length})
+                    🟢 Active Funds ({active_funds.length})
                 </button>
                 <button 
                     onClick={() => setActiveTab('SETTLED')}
-                    className={`flex-1 py-3 text-sm font-bold transition-all border-b-2 text-center ${
+                    className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-all text-center rounded-lg cursor-pointer ${
                         activeTab === 'SETTLED' 
-                        ? 'border-primary text-primary' 
-                        : 'border-transparent text-gray-400 hover:text-white'
+                        ? 'bg-card-dark text-text-muted shadow' 
+                        : 'text-text-muted hover:text-text-main'
                     }`}
                 >
-                    🏁 Settled / Closed Funds ({settled_funds.length})
+                    🏁 Closed Funds ({settled_funds.length})
                 </button>
             </div>
 
@@ -586,37 +587,37 @@ const FundList = () => {
                                     console.error(e);
                                 }
                             }}
-                            className={`p-5 rounded-xl border transition-all cursor-pointer shadow-md flex flex-col justify-between ${
+                            className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-sm flex flex-col justify-between ${
                                 selectedFund?.id === fund.id
-                                ? 'bg-gray-850 border-primary shadow-lg ring-1 ring-primary'
-                                : 'bg-card-dark border-gray-800 hover:border-gray-700 hover:shadow-lg'
+                                ? 'bg-bg-dark border-primary shadow-lg ring-1 ring-primary'
+                                : 'bg-card-dark border-border-main hover:border-border-main/80 hover:shadow-md'
                             }`}
                         >
                             <div>
                                 <div className="flex justify-between items-start gap-2 mb-2">
-                                    <h4 className="font-bold text-lg text-gray-200 line-clamp-1">{fund.title}</h4>
-                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                        fund.status === 'ACTIVE' ? 'bg-emerald-950 text-emerald-400' : 'bg-gray-800 text-gray-400'
+                                    <h4 className="font-extrabold text-base text-text-main line-clamp-1">{fund.title}</h4>
+                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                                        fund.status === 'ACTIVE' ? 'bg-success/15 text-success border border-success/20' : 'bg-bg-dark text-text-muted'
                                     }`}>
                                         {fund.status}
                                     </span>
                                 </div>
-                                <span className="text-xs text-gray-500 font-semibold block">Provided by: {fund.provider}</span>
-                                <p className="text-xs text-gray-400 mt-2 line-clamp-2">{fund.purpose}</p>
+                                <span className="text-[10px] text-text-muted font-bold block">Provided by: {fund.provider}</span>
+                                <p className="text-xs text-text-muted mt-2 line-clamp-2 leading-relaxed">{fund.purpose}</p>
                             </div>
 
-                            <div className="mt-4 pt-3 border-t border-gray-800/80 grid grid-cols-3 gap-2 text-xs">
+                            <div className="mt-4 pt-3 border-t border-border-main grid grid-cols-3 gap-2 text-xs">
                                 <div>
-                                    <span className="text-gray-500 block">Received</span>
-                                    <span className="font-semibold text-emerald-400">{formatCurrency(fund.total_received)}</span>
+                                    <span className="text-text-muted block text-[9px] uppercase font-semibold">Received</span>
+                                    <span className="font-bold text-emerald-500">{formatCurrency(fund.total_received)}</span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500 block">Spent</span>
-                                    <span className="font-semibold text-error">{formatCurrency(fund.total_spent)}</span>
+                                    <span className="text-text-muted block text-[9px] uppercase font-semibold">Spent</span>
+                                    <span className="font-bold text-error">{formatCurrency(fund.total_spent)}</span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500 block">Remaining</span>
-                                    <span className={`font-semibold ${parseFloat(fund.remaining_balance) >= 0 ? 'text-secondary' : 'text-error'}`}>
+                                    <span className="text-text-muted block text-[9px] uppercase font-semibold">Remaining</span>
+                                    <span className={`font-bold ${parseFloat(fund.remaining_balance) >= 0 ? 'text-secondary' : 'text-error'}`}>
                                         {formatCurrency(fund.remaining_balance)}
                                     </span>
                                 </div>
@@ -624,8 +625,9 @@ const FundList = () => {
                         </div>
                     ))
                 ) : (
-                    <div className="col-span-2 py-12 text-center text-gray-500 bg-card-dark rounded-xl border border-gray-800">
-                        No {activeTab.toLowerCase()} funds found. Click "Create New Fund" to start.
+                    <div className="col-span-2 py-16 text-center text-text-muted bg-card-dark rounded-2xl border border-border-main">
+                        <p className="text-sm font-semibold">No {activeTab.toLowerCase()} purpose funds found.</p>
+                        <p className="text-xs text-text-muted mt-1">Initiate a purpose fund using the "Create New Fund" action.</p>
                     </div>
                 )}
             </div>
@@ -634,33 +636,33 @@ const FundList = () => {
             
             {/* Create Fund Modal */}
             {showCreateModal && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-sm">
-                    <div className="bg-card-dark p-6 rounded-2xl border border-gray-700 w-full max-w-md shadow-2xl relative">
+                <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-sm">
+                    <div className="bg-card-dark p-6 rounded-2xl border border-border-main w-full max-w-md shadow-2xl relative">
                         <button 
                             onClick={() => setShowCreateModal(false)}
-                            className="absolute right-4 top-4 text-gray-400 hover:text-white"
+                            className="absolute right-4 top-4 text-text-muted hover:text-text-main cursor-pointer"
                         >
                             ✕
                         </button>
-                        <h3 className="text-xl font-bold text-primary mb-4">Create New Fund</h3>
+                        <h3 className="text-lg font-black text-primary mb-4 uppercase tracking-wider">Create Purpose Fund</h3>
                         <form onSubmit={handleCreateSubmit} className="space-y-4">
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Fund Title *</label>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Fund Title *</label>
                                 <input 
                                     type="text" 
                                     required 
-                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary"
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
                                     value={createForm.title}
                                     onChange={e => setCreateForm({...createForm, title: e.target.value})}
-                                    placeholder="e.g. Tech Fest 2026"
+                                    placeholder="e.g. Office Tech Fest 2026"
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Purpose *</label>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Purpose *</label>
                                 <textarea 
                                     required 
                                     rows={2}
-                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary resize-none"
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary resize-none"
                                     value={createForm.purpose}
                                     onChange={e => setCreateForm({...createForm, purpose: e.target.value})}
                                     placeholder="Brief purpose description"
@@ -668,22 +670,22 @@ const FundList = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                  <div>
-                                     <label className="text-xs text-gray-400 block mb-1">Received Amount (INR) *</label>
+                                     <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Amount Received *</label>
                                      <input 
                                          type="number" 
                                          required 
                                          min="0"
                                          step="0.01"
-                                         className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary"
+                                         className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary font-mono"
                                          value={createForm.initial_amount}
                                          onChange={e => setCreateForm({...createForm, initial_amount: e.target.value})}
                                          placeholder="0.00"
                                      />
                                  </div>
                                  <div>
-                                     <label className="text-xs text-gray-400 block mb-1">Payment Mode *</label>
+                                     <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Payment Mode *</label>
                                      <select 
-                                         className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary"
+                                         className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-primary cursor-pointer"
                                          value={createForm.payment_mode}
                                          onChange={e => setCreateForm({...createForm, payment_mode: e.target.value})}
                                      >
@@ -694,42 +696,42 @@ const FundList = () => {
                              </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Provider Person *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Provider Name *</label>
                                     <input 
                                         type="text" 
                                         required 
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
                                         value={createForm.provider}
                                         onChange={e => setCreateForm({...createForm, provider: e.target.value})}
-                                        placeholder="Provider Name"
+                                        placeholder="Provider Person/Org"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Received Date *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Received Date *</label>
                                     <input 
                                         type="date" 
                                         required 
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-primary cursor-pointer"
                                         value={createForm.received_date}
                                         onChange={e => setCreateForm({...createForm, received_date: e.target.value})}
                                     />
                                 </div>
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Notes (Optional)</label>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Notes (Optional)</label>
                                 <input 
                                     type="text" 
-                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary"
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
                                     value={createForm.notes}
                                     onChange={e => setCreateForm({...createForm, notes: e.target.value})}
-                                    placeholder="Any notes"
+                                    placeholder="Any additional comments"
                                 />
                             </div>
                             <button 
                                 type="submit" 
-                                className="w-full py-2 bg-gradient-to-r from-primary to-purple-600 hover:from-purple-500 hover:to-primary text-white font-bold rounded-lg text-sm transition-all mt-2"
+                                className="w-full py-3 bg-primary hover:bg-primary-hover text-black font-extrabold rounded-xl text-sm transition-all mt-2 cursor-pointer shadow active:scale-95"
                             >
-                                Initialize Fund
+                                Initialize Purpose Fund
                             </button>
                         </form>
                     </div>
@@ -738,35 +740,35 @@ const FundList = () => {
 
             {/* Add Additional Money Modal */}
             {showAdditionModal && selectedFund && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-sm">
-                    <div className="bg-card-dark p-6 rounded-2xl border border-gray-700 w-full max-w-sm shadow-2xl relative">
+                <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-sm">
+                    <div className="bg-card-dark p-6 rounded-2xl border border-border-main w-full max-w-sm shadow-2xl relative">
                         <button 
                             onClick={() => setShowAdditionModal(false)}
-                            className="absolute right-4 top-4 text-gray-400 hover:text-white"
+                            className="absolute right-4 top-4 text-text-muted hover:text-text-main cursor-pointer"
                         >
                             ✕
                         </button>
-                        <h3 className="text-lg font-bold text-secondary mb-4">Add Money to Fund</h3>
-                        <p className="text-xs text-gray-500 mb-3">Adding to: <span className="text-gray-300 font-semibold">{selectedFund.title}</span></p>
+                        <h3 className="text-lg font-black text-secondary mb-4 uppercase tracking-wider">Add money to Fund</h3>
+                        <p className="text-xs text-text-muted mb-4 pb-2 border-b border-border-main/50">Adding to: <span className="text-text-main font-semibold">{selectedFund.title}</span></p>
                         <form onSubmit={handleAdditionSubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Additional Amount *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Amount *</label>
                                     <input 
                                         type="number" 
                                         required 
                                         min="0"
                                         step="0.01"
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-secondary"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-secondary font-mono"
                                         value={additionForm.amount}
                                         onChange={e => setAdditionForm({...additionForm, amount: e.target.value})}
                                         placeholder="0.00"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Payment Mode *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Mode *</label>
                                     <select 
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-secondary"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-secondary cursor-pointer"
                                         value={additionForm.payment_mode}
                                         onChange={e => setAdditionForm({...additionForm, payment_mode: e.target.value})}
                                     >
@@ -776,30 +778,30 @@ const FundList = () => {
                                 </div>
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Received Date *</label>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Received Date *</label>
                                 <input 
                                     type="date" 
                                     required 
-                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-secondary"
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-secondary cursor-pointer"
                                     value={additionForm.date}
                                     onChange={e => setAdditionForm({...additionForm, date: e.target.value})}
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Notes (Optional)</label>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Notes (Optional)</label>
                                 <input 
                                     type="text" 
-                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-secondary"
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-secondary"
                                     value={additionForm.notes}
                                     onChange={e => setAdditionForm({...additionForm, notes: e.target.value})}
-                                    placeholder="e.g. Approved budget increase"
+                                    placeholder="e.g. Budget top-up"
                                 />
                             </div>
                             <button 
                                 type="submit" 
-                                className="w-full py-2 bg-secondary text-bg-dark hover:bg-[#02c7b5] font-bold rounded-lg text-sm transition-colors mt-2"
+                                className="w-full py-3 bg-secondary hover:bg-secondary-hover text-black font-extrabold rounded-xl text-sm transition-all mt-2 cursor-pointer shadow active:scale-95"
                             >
-                                Confirm Money Received
+                                Confirm Top-up
                             </button>
                         </form>
                     </div>
@@ -808,34 +810,34 @@ const FundList = () => {
 
             {/* Record Expense Modal */}
             {showExpenseModal && selectedFund && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-sm">
-                    <div className="bg-card-dark p-6 rounded-2xl border border-gray-700 w-full max-w-md shadow-2xl relative">
+                <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-sm">
+                    <div className="bg-card-dark p-6 rounded-2xl border border-border-main w-full max-w-md shadow-2xl relative">
                         <button 
                             onClick={() => setShowExpenseModal(false)}
-                            className="absolute right-4 top-4 text-gray-400 hover:text-white"
+                            className="absolute right-4 top-4 text-text-muted hover:text-text-main cursor-pointer"
                         >
                             ✕
                         </button>
-                        <h3 className="text-lg font-bold text-error mb-4">Record Fund Expense</h3>
-                        <p className="text-xs text-gray-500 mb-3">Charging against: <span className="text-gray-300 font-semibold">{selectedFund.title}</span></p>
+                        <h3 className="text-lg font-black text-error mb-4 uppercase tracking-wider">Record Fund Expense</h3>
+                        <p className="text-xs text-text-muted mb-4 pb-2 border-b border-border-main/50">Charging: <span className="text-text-main font-semibold">{selectedFund.title}</span></p>
                         <form onSubmit={handleExpenseSubmit} className="space-y-4">
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Expense Title *</label>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Expense Title *</label>
                                 <input 
                                     type="text" 
                                     required 
-                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-error"
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-error"
                                     value={expenseForm.title}
                                     onChange={e => setExpenseForm({...expenseForm, title: e.target.value})}
-                                    placeholder="e.g. Printing flyers"
+                                    placeholder="e.g. Purchase refreshments"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Category *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Category *</label>
                                     <select 
                                         required 
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-error"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-error cursor-pointer"
                                         value={expenseForm.category}
                                         onChange={e => setExpenseForm({...expenseForm, category: e.target.value})}
                                     >
@@ -845,11 +847,11 @@ const FundList = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Expense Date *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Expense Date *</label>
                                     <input 
                                         type="date" 
                                         required 
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-error"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-error cursor-pointer"
                                         value={expenseForm.date}
                                         onChange={e => setExpenseForm({...expenseForm, date: e.target.value})}
                                     />
@@ -857,22 +859,22 @@ const FundList = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Amount Spent (INR) *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Amount Spent *</label>
                                     <input 
                                         type="number" 
                                         required 
                                         min="0"
                                         step="0.01"
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-error"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-error font-mono"
                                         value={expenseForm.amount}
                                         onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})}
                                         placeholder="0.00"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Payment Mode *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Payment Mode *</label>
                                     <select 
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-error"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-error cursor-pointer"
                                         value={expenseForm.payment_mode}
                                         onChange={e => setExpenseForm({...expenseForm, payment_mode: e.target.value})}
                                     >
@@ -882,26 +884,26 @@ const FundList = () => {
                                 </div>
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Description (Optional)</label>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Notes / description</label>
                                 <input 
                                     type="text" 
-                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-error"
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-error"
                                     value={expenseForm.description}
                                     onChange={e => setExpenseForm({...expenseForm, description: e.target.value})}
-                                    placeholder="Details of purchase"
+                                    placeholder="Details of expense"
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Attachment (Optional Receipt)</label>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Attachment (Receipt)</label>
                                 <input 
                                     type="file" 
-                                    className="w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-gray-800 file:text-gray-300 hover:file:bg-gray-700"
+                                    className="w-full text-xs text-text-muted file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-bg-dark file:text-text-main hover:file:bg-bg-dark/80 cursor-pointer"
                                     onChange={e => setExpenseForm({...expenseForm, attachment: e.target.files[0]})}
                                 />
                             </div>
                             <button 
                                 type="submit" 
-                                className="w-full py-2 bg-error text-white hover:bg-red-500 font-bold rounded-lg text-sm transition-colors mt-2"
+                                className="w-full py-3 bg-error hover:bg-red-500 text-white font-extrabold rounded-xl text-sm transition-colors mt-2 cursor-pointer shadow active:scale-95"
                             >
                                 Record Expense
                             </button>
@@ -912,35 +914,35 @@ const FundList = () => {
 
             {/* Settle Fund Modal */}
             {showSettleModal && selectedFund && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-sm">
-                    <div className="bg-card-dark p-6 rounded-2xl border border-gray-700 w-full max-w-md shadow-2xl relative">
+                <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-sm">
+                    <div className="bg-card-dark p-6 rounded-2xl border border-border-main w-full max-w-md shadow-2xl relative">
                         <button 
                             onClick={() => setShowSettleModal(false)}
-                            className="absolute right-4 top-4 text-gray-400 hover:text-white"
+                            className="absolute right-4 top-4 text-text-muted hover:text-text-main cursor-pointer"
                         >
                             ✕
                         </button>
-                        <h3 className="text-lg font-bold text-primary mb-4">Settle & Close Fund</h3>
-                        <p className="text-xs text-gray-500 mb-3">Settling: <span className="text-gray-300 font-semibold">{selectedFund.title}</span></p>
+                        <h3 className="text-lg font-black text-primary mb-4 uppercase tracking-wider">Settle & Close Fund</h3>
+                        <p className="text-xs text-text-muted mb-4 pb-2 border-b border-border-main/50">Settling: <span className="text-text-main font-semibold">{selectedFund.title}</span></p>
                         <form onSubmit={handleSettleSubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Settlement Date *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Settlement Date *</label>
                                     <input 
                                         type="date" 
                                         required 
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-primary cursor-pointer"
                                         value={settleForm.settlement_date}
                                         onChange={e => setSettleForm({...settleForm, settlement_date: e.target.value})}
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Returned Amount (if any)</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Returned Leftover</label>
                                     <input 
                                         type="number" 
                                         min="0"
                                         step="0.01"
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-primary font-mono"
                                         value={settleForm.returned_amount}
                                         onChange={e => setSettleForm({...settleForm, returned_amount: e.target.value})}
                                     />
@@ -948,20 +950,20 @@ const FundList = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Additional Required (if exceeded)</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Exceeded Required</label>
                                     <input 
                                         type="number" 
                                         min="0"
                                         step="0.01"
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-primary font-mono"
                                         value={settleForm.additional_amount_required}
                                         onChange={e => setSettleForm({...settleForm, additional_amount_required: e.target.value})}
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Settlement Payment Mode *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Payment Mode *</label>
                                     <select 
-                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-primary cursor-pointer"
                                         value={settleForm.settlement_payment_mode}
                                         onChange={e => setSettleForm({...settleForm, settlement_payment_mode: e.target.value})}
                                     >
@@ -971,19 +973,19 @@ const FundList = () => {
                                 </div>
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Settlement Notes *</label>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Settlement Notes *</label>
                                 <textarea 
                                     required 
                                     rows={2}
-                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-primary resize-none"
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary resize-none"
                                     value={settleForm.settlement_notes}
                                     onChange={e => setSettleForm({...settleForm, settlement_notes: e.target.value})}
-                                    placeholder="Settlement comments (e.g. leftover returned to company account)"
+                                    placeholder="e.g. Leftover returned to sponsor"
                                 />
                             </div>
                             <button 
                                 type="submit" 
-                                className="w-full py-2 bg-gradient-to-r from-primary to-purple-600 hover:from-purple-500 hover:to-primary text-white font-bold rounded-lg text-sm transition-all mt-2"
+                                className="w-full py-3 bg-primary hover:bg-primary-hover text-black font-extrabold rounded-xl text-sm transition-all mt-2 cursor-pointer shadow active:scale-95"
                             >
                                 Finalize Settlement & Close
                             </button>

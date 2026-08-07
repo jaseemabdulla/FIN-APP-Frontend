@@ -59,7 +59,7 @@ const Autocomplete = ({ value, onChange, suggestions, placeholder, required = fa
         setIsOpen(false);
     };
 
-    const inputClasses = className || "w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-white placeholder-gray-600 transition-all font-sans";
+    const inputClasses = className || "w-full bg-card-dark border border-border-main rounded-xl px-4 py-3 text-text-main placeholder-text-muted transition-all font-sans outline-none focus:border-primary";
 
     return (
         <div ref={containerRef} className="relative w-full">
@@ -79,14 +79,14 @@ const Autocomplete = ({ value, onChange, suggestions, placeholder, required = fa
             />
             
             {isOpen && filtered.length > 0 && (
-                <ul className="absolute z-50 w-full mt-1.5 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl max-h-60 overflow-y-auto divide-y divide-gray-700/50 scrollbar-thin scrollbar-thumb-gray-700">
+                <ul className="absolute z-50 w-full mt-1.5 bg-card-dark border border-border-main rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-border-main">
                     {filtered.map((item, index) => (
                         <li
                             key={item}
                             onClick={() => selectSuggestion(item)}
                             onMouseEnter={() => setActiveIndex(index)}
-                            className={`px-4 py-2.5 text-sm text-gray-200 cursor-pointer transition-colors ${
-                                index === activeIndex ? 'bg-primary/25 text-white font-semibold' : 'hover:bg-gray-700/40'
+                            className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
+                                index === activeIndex ? 'bg-primary/10 text-primary font-semibold' : 'text-text-main hover:bg-bg-dark/40'
                             }`}
                         >
                             {item}

@@ -42,46 +42,46 @@ const SetupScreen = ({ onComplete }) => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-bg-dark text-white p-4">
-            <div className="w-full max-w-md bg-card-dark p-8 rounded-2xl shadow-xl border border-gray-800 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary"></div>
+        <div className="min-h-screen flex items-center justify-center bg-bg-dark text-text-main p-4">
+            <div className="w-full max-w-md bg-card-dark p-8 rounded-2xl shadow-xl border border-border-main relative overflow-hidden animate-fade-in">
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary to-secondary"></div>
                 
-                <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Welcome</h2>
-                <p className="text-gray-400 mb-8">Let's set up your starting balances.</p>
+                <h2 className="text-3xl font-extrabold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Welcome</h2>
+                <p className="text-text-muted mb-8 text-sm font-semibold">Let's set up your starting balances.</p>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Cash in Hand</label>
+                        <label className="block text-sm font-semibold text-text-muted mb-2 uppercase tracking-wider">Cash in Hand</label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted font-bold">₹</span>
                             <input 
                                 type="text"
                                 name="cash_balance"
                                 value={formData.cash_balance}
                                 onChange={handleChange}
                                 placeholder="0"
-                                className="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 pl-8 pr-4 text-white placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                className="w-full bg-bg-dark border border-border-main rounded-xl py-3 pl-8 pr-4 text-text-main placeholder-text-muted focus:border-primary outline-none transition-all font-semibold font-mono"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Bank Account Balance</label>
+                        <label className="block text-sm font-semibold text-text-muted mb-2 uppercase tracking-wider">Bank Account Balance</label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted font-bold">₹</span>
                             <input 
                                 type="text"
                                 name="account_balance"
                                 value={formData.account_balance}
                                 onChange={handleChange}
                                 placeholder="0"
-                                className="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 pl-8 pr-4 text-white placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                className="w-full bg-bg-dark border border-border-main rounded-xl py-3 pl-8 pr-4 text-text-main placeholder-text-muted focus:border-primary outline-none transition-all font-semibold font-mono"
                             />
                         </div>
                     </div>
 
                     {error && (
-                        <div className="p-3 bg-red-900/30 text-red-400 text-sm rounded border border-red-900/50">
+                        <div className="p-3.5 bg-error/10 text-error text-xs rounded-xl border border-error/20 font-semibold animate-pulse">
                             {error}
                         </div>
                     )}
@@ -89,13 +89,13 @@ const SetupScreen = ({ onComplete }) => {
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary-hover hover:to-secondary-hover text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-cyan-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
+                        className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-95 text-black font-extrabold py-3.5 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98] cursor-pointer text-sm uppercase tracking-wider"
                     >
                         {loading ? 'Setting up...' : 'Start Tracking'}
                     </button>
                     
-                    <p className="text-xs text-center text-gray-600 mt-4">
-                        You can add debts and other details later.
+                    <p className="text-xs text-center text-text-muted mt-4 font-semibold">
+                        You can add debts, categories, and other accounts later.
                     </p>
                 </form>
             </div>

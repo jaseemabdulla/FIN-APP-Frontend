@@ -267,13 +267,13 @@ const TransactionForm = ({
     const exactMatch = ledgers.some(l => l.name && l.name.toLowerCase() === ledgerQuery.toLowerCase().trim());
 
     return (
-        <form onSubmit={handleSubmit} className={`bg-card-dark p-4 sm:p-5 rounded-xl shadow-lg mb-6 border ${editingTransaction ? 'border-primary' : 'border-gray-700/60'}`}>
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-800/40">
-                 <h3 className="text-lg sm:text-xl font-bold text-secondary truncate pr-2">
+        <form onSubmit={handleSubmit} className={`bg-card-dark p-4 sm:p-5 rounded-2xl shadow-lg mb-6 border ${editingTransaction ? 'border-primary' : 'border-border-main'}`}>
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-border-main">
+                 <h3 className="text-base sm:text-lg font-bold text-secondary truncate pr-2">
                     {editingTransaction ? 'Edit Transaction' : prefillDebt ? 'Settle Debt' : prefillEvent ? `Add to Event: ${prefillEvent.name}` : prefillInvestment ? 'Convert Net Balance to Investment' : 'Add Transaction'}
                  </h3>
                  {(editingTransaction || prefillDebt || prefillEvent || prefillInvestment) && (
-                     <button type="button" onClick={editingTransaction ? onCancelEdit : prefillDebt ? onCancelRepayment : prefillEvent ? onCancelEventTxn : onCancelInvestment} className="text-gray-400 hover:text-white text-xs sm:text-sm underline whitespace-nowrap">
+                     <button type="button" onClick={editingTransaction ? onCancelEdit : prefillDebt ? onCancelRepayment : prefillEvent ? onCancelEventTxn : onCancelInvestment} className="text-text-muted hover:text-text-main text-xs sm:text-sm underline whitespace-nowrap cursor-pointer">
                           Cancel
                      </button>
                  )}
@@ -283,21 +283,21 @@ const TransactionForm = ({
                 {/* Date - Visible when settling debt or adding to an event */}
                 {(prefillDebt || prefillEvent) && (
                     <div className="w-full sm:w-[calc(50%-8px)] md:w-auto md:min-w-[130px]">
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Date</label>
+                        <label className="block text-xs text-text-muted mb-1 font-semibold uppercase tracking-wider">Date</label>
                         <input 
                             type="date" 
                             name="date" 
                             value={formData.date} 
                             onChange={handleChange}
                             required
-                            className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 focus:border-primary outline-none text-white text-sm"
+                            className="w-full bg-bg-dark border border-border-main rounded-xl px-3 py-2 focus:border-primary outline-none text-text-main text-sm cursor-pointer"
                         />
                     </div>
                 )}
 
                 {/* Amount */}
                 <div className="w-full sm:w-[calc(50%-8px)] md:flex-1 md:min-w-[110px]">
-                    <label className="block text-xs text-gray-400 mb-1 font-semibold">Amount</label>
+                    <label className="block text-xs text-text-muted mb-1 font-semibold uppercase tracking-wider">Amount</label>
                     <input 
                         type="number" 
                         name="amount" 
@@ -305,7 +305,8 @@ const TransactionForm = ({
                         onChange={handleChange}
                         required
                         min="1"
-                        className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 focus:border-primary outline-none text-white text-sm"
+                        placeholder="0.00"
+                        className="w-full bg-bg-dark border border-border-main rounded-xl px-3 py-2 focus:border-primary outline-none text-text-main text-sm"
                     />
                 </div>
 
@@ -313,7 +314,7 @@ const TransactionForm = ({
                 {['DEBT_TAKEN', 'DEBT_GIVEN'].includes(formData.transaction_type) ? (
                     <>
                         <div ref={containerRef} className="relative w-full md:flex-[1.5] md:min-w-[200px]">
-                            <label className="block text-xs text-gray-400 mb-1 font-semibold">Person (Ledger Profile)</label>
+                            <label className="block text-xs text-text-muted mb-1 font-semibold uppercase tracking-wider">Person (Ledger Profile)</label>
                             <div className="relative">
                                 <input
                                     type="text"
@@ -321,21 +322,21 @@ const TransactionForm = ({
                                     onChange={(e) => handleQueryChange(e.target.value)}
                                     onFocus={() => setIsDropdownOpen(true)}
                                     placeholder="Search or create ledger..."
-                                    className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-white placeholder-gray-600 transition-all font-sans text-sm pr-8"
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl px-3 py-2 focus:border-primary outline-none text-text-main placeholder-text-muted transition-all font-sans text-sm pr-8"
                                     required={true}
                                 />
                                 
                                 {/* Dropdown Suggestions */}
                                 {isDropdownOpen && (
-                                    <ul className="absolute left-0 right-0 z-50 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl max-h-60 overflow-y-auto divide-y divide-gray-700/50 scrollbar-thin scrollbar-thumb-gray-700 animate-fade-in">
+                                    <ul className="absolute left-0 right-0 z-50 mt-1.5 bg-card-dark border border-border-main rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-border-main animate-fade-in">
                                         {filteredLedgers.map((ledger) => (
                                             <li
                                                 key={ledger.id}
                                                 onClick={() => handleSelectLedger(ledger)}
-                                                className="px-3 py-2 text-xs sm:text-sm text-gray-200 cursor-pointer hover:bg-gray-700/40 transition-colors flex justify-between items-center animate-fade-in"
+                                                className="px-3.5 py-2.5 text-xs sm:text-sm text-text-muted cursor-pointer hover:bg-bg-dark/40 transition-colors flex justify-between items-center"
                                             >
-                                                <span className="font-semibold text-white">{ledger.name}</span>
-                                                {ledger.phone && <span className="text-[10px] text-gray-500 font-mono">{ledger.phone}</span>}
+                                                <span className="font-semibold text-text-main">{ledger.name}</span>
+                                                {ledger.phone && <span className="text-[10px] text-text-muted font-mono">{ledger.phone}</span>}
                                             </li>
                                         ))}
                                         
@@ -343,14 +344,14 @@ const TransactionForm = ({
                                         {ledgerQuery.trim() && !exactMatch && (
                                             <li
                                                 onClick={handleStartCreateInline}
-                                                className="px-3 py-2.5 text-xs sm:text-sm text-secondary hover:bg-gray-700/40 cursor-pointer font-bold transition-colors flex items-center gap-1.5 border-t border-gray-700/60"
+                                                className="px-3.5 py-2.5 text-xs sm:text-sm text-secondary hover:bg-bg-dark/40 cursor-pointer font-extrabold transition-colors flex items-center gap-1.5 border-t border-border-main"
                                             >
                                                 ➕ Create Ledger: "{ledgerQuery.trim()}"
                                             </li>
                                         )}
                                         
                                         {filteredLedgers.length === 0 && !ledgerQuery.trim() && (
-                                            <li className="px-3 py-2 text-xs text-gray-500 italic">
+                                            <li className="px-3.5 py-2.5 text-xs text-text-muted italic">
                                                 No ledgers found. Start typing to create.
                                             </li>
                                         )}
@@ -360,11 +361,11 @@ const TransactionForm = ({
                             
                             {/* Selected / Status indicator */}
                             {formData.ledger ? (
-                                <div className="absolute right-2.5 top-8 flex items-center justify-center w-4 h-4 bg-green-950 text-green-400 rounded-full border border-green-500/20 text-[9px]" title="Linked to Ledger">
+                                <div className="absolute right-2.5 top-8 flex items-center justify-center w-4 h-4 bg-success/15 text-success rounded-full border border-success/20 text-[9px]" title="Linked to Ledger">
                                     ✓
                                 </div>
                             ) : (
-                                <div className="absolute right-2.5 top-8 flex items-center justify-center w-4 h-4 bg-yellow-950/45 text-yellow-500 rounded-full border border-yellow-500/25 text-[9px]" title="No Ledger selected yet">
+                                <div className="absolute right-2.5 top-8 flex items-center justify-center w-4 h-4 bg-warning/15 text-warning rounded-full border border-warning/20 text-[9px]" title="No Ledger selected yet">
                                     !
                                 </div>
                             )}
@@ -372,32 +373,32 @@ const TransactionForm = ({
 
                         {/* Inline Ledger Creation Form */}
                         {showCreateLedgerInline && (
-                            <div className="w-full bg-gray-900 border border-gray-700/65 p-3 rounded-lg animate-fade-in text-xs grid gap-2 md:w-full md:col-span-full">
-                                <div className="font-bold text-secondary text-[10px] uppercase tracking-wider">
+                            <div className="w-full bg-bg-dark border border-border-main p-3 rounded-xl animate-fade-in text-xs grid gap-2 md:w-full md:col-span-full">
+                                <div className="font-extrabold text-secondary text-[10px] uppercase tracking-wider">
                                     Create New Ledger: "{ledgerQuery.trim()}"
                                 </div>
                                 {inlineError && (
-                                    <div className="text-[10px] text-red-400">{inlineError}</div>
+                                    <div className="text-[10px] text-error">{inlineError}</div>
                                 )}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
-                                        <label className="block text-[9px] text-gray-400 mb-0.5 uppercase font-semibold">Phone</label>
+                                        <label className="block text-[9px] text-text-muted mb-0.5 uppercase font-semibold">Phone</label>
                                         <input
                                             type="text"
                                             placeholder="Phone number"
                                             value={newPhone}
                                             onChange={(e) => setNewPhone(e.target.value)}
-                                            className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1 text-[11px] text-white font-mono outline-none focus:border-primary"
+                                            className="w-full bg-card-dark border border-border-main rounded-lg px-2.5 py-1.5 text-[11px] text-text-main font-mono outline-none focus:border-primary"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-[9px] text-gray-400 mb-0.5 uppercase font-semibold">Email</label>
+                                        <label className="block text-[9px] text-text-muted mb-0.5 uppercase font-semibold">Email</label>
                                         <input
                                             type="email"
                                             placeholder="email@address.com"
                                             value={newEmail}
                                             onChange={(e) => setNewEmail(e.target.value)}
-                                            className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1 text-[11px] text-white outline-none focus:border-primary"
+                                            className="w-full bg-card-dark border border-border-main rounded-lg px-2.5 py-1.5 text-[11px] text-text-main outline-none focus:border-primary"
                                         />
                                     </div>
                                 </div>
@@ -405,14 +406,14 @@ const TransactionForm = ({
                                     <button
                                         type="button"
                                         onClick={() => setShowCreateLedgerInline(false)}
-                                        className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded text-[10px] font-bold transition-all cursor-pointer"
+                                        className="bg-card-dark border border-border-main hover:bg-bg-dark text-text-muted px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="button"
                                         onClick={handleCreateInlineSubmit}
-                                        className="bg-secondary text-black px-2.5 py-1 rounded text-[10px] font-bold transition-all cursor-pointer"
+                                        className="bg-secondary hover:bg-secondary-hover text-black px-3 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer"
                                     >
                                         Create & Select
                                     </button>
@@ -421,39 +422,40 @@ const TransactionForm = ({
                         )}
 
                         <div className="w-full md:flex-1 md:min-w-[160px]">
-                            <label className="block text-xs text-gray-400 mb-1 font-semibold">Debt Notes (Optional)</label>
+                            <label className="block text-xs text-text-muted mb-1 font-semibold uppercase tracking-wider">Debt Notes (Optional)</label>
                             <input 
                                 type="text" 
                                 name="debt_description" 
                                 value={formData.debt_description} 
                                 onChange={handleChange}
-                                placeholder="e.g. For dinner"
-                                className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 focus:border-primary outline-none text-white text-sm"
+                                placeholder="e.g. Dinner share"
+                                className="w-full bg-bg-dark border border-border-main rounded-xl px-3 py-2 focus:border-primary outline-none text-text-main text-sm"
                             />
                         </div>
                     </>
                 ) : (
                     <div className="w-full md:flex-[2] md:min-w-[180px]">
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Description</label>
+                        <label className="block text-xs text-text-muted mb-1 font-semibold uppercase tracking-wider">Description</label>
                         <input 
                             type="text" 
                             name="description" 
                             value={formData.description} 
                             onChange={handleChange}
                             required
-                            className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 focus:border-primary outline-none text-white text-sm"
+                            placeholder="e.g. Grocery shopping"
+                            className="w-full bg-bg-dark border border-border-main rounded-xl px-3 py-2 focus:border-primary outline-none text-text-main text-sm"
                         />
                     </div>
                 )}
 
                 {/* Type */}
                 <div className="w-full sm:w-[calc(50%-8px)] md:w-auto md:min-w-[130px]">
-                    <label className="block text-xs text-gray-400 mb-1 font-semibold">Type</label>
+                    <label className="block text-xs text-text-muted mb-1 font-semibold uppercase tracking-wider">Type</label>
                     <select 
                         name="transaction_type" 
                         value={formData.transaction_type} 
                         onChange={handleChange}
-                        className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 focus:border-primary outline-none text-white text-sm cursor-pointer"
+                        className="w-full bg-bg-dark border border-border-main rounded-xl px-3 py-2.5 focus:border-primary outline-none text-text-main text-sm cursor-pointer"
                         disabled={!!prefillDebt}
                     >
                         <option value="EXPENSE">Expense</option>
@@ -470,12 +472,12 @@ const TransactionForm = ({
 
                  {/* Category */}
                  <div className="w-full sm:w-[calc(50%-8px)] md:w-auto md:min-w-[130px]">
-                    <label className="block text-xs text-gray-400 mb-1 font-semibold">Category</label>
+                    <label className="block text-xs text-text-muted mb-1 font-semibold uppercase tracking-wider">Category</label>
                     <select 
                         name="category" 
                         value={formData.category} 
                         onChange={handleChange}
-                        className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 focus:border-primary outline-none text-white text-sm cursor-pointer"
+                        className="w-full bg-bg-dark border border-border-main rounded-xl px-3 py-2.5 focus:border-primary outline-none text-text-main text-sm cursor-pointer"
                         disabled={!!prefillDebt}
                     >
                         <option value="" disabled>Select</option>
@@ -494,9 +496,9 @@ const TransactionForm = ({
                             value="CASH"
                             checked={formData.payment_mode === 'CASH'}
                             onChange={handleChange}
-                            className="w-4 h-4 text-primary focus:ring-primary bg-gray-800 border-gray-600"
+                            className="w-4 h-4 text-primary focus:ring-primary border-border-main bg-bg-dark"
                         />
-                        <span className="text-sm text-gray-200">Cash</span>
+                        <span className="text-sm text-text-main font-semibold">Cash</span>
                     </label>
                     <label className="cursor-pointer flex items-center gap-2 select-none">
                         <input 
@@ -505,9 +507,9 @@ const TransactionForm = ({
                             value="ACCOUNT"
                             checked={formData.payment_mode === 'ACCOUNT'}
                             onChange={handleChange}
-                            className="w-4 h-4 text-primary focus:ring-primary bg-gray-800 border-gray-600"
+                            className="w-4 h-4 text-primary focus:ring-primary border-border-main bg-bg-dark"
                         />
-                        <span className="text-sm text-gray-200">Account</span>
+                        <span className="text-sm text-text-main font-semibold">Account</span>
                     </label>
                 </div>
 
@@ -516,9 +518,13 @@ const TransactionForm = ({
                      <button 
                         type="submit" 
                         disabled={loading}
-                        className={`w-full sm:w-auto font-bold py-2.5 px-6 rounded-lg transition-colors border text-sm cursor-pointer ${editingTransaction ? 'bg-secondary text-black hover:bg-teal-400 border-teal-500' : 'bg-purple-600 text-white hover:bg-purple-700 border-purple-400'}`}
+                        className={`w-full sm:w-auto font-extrabold py-2.5 px-6 rounded-xl transition-all shadow-md transform active:scale-95 border text-sm cursor-pointer ${
+                            editingTransaction 
+                            ? 'bg-secondary hover:bg-secondary-hover text-black border-secondary' 
+                            : 'bg-primary hover:bg-primary-hover text-black border-primary'
+                        }`}
                     >
-                        {loading ? '...' : editingTransaction ? 'Update' : prefillDebt ? 'Record Payment' : prefillEvent ? 'Add to Event' : 'Add'}
+                        {loading ? 'Saving...' : editingTransaction ? 'Update' : prefillDebt ? 'Record Payment' : prefillEvent ? 'Add to Event' : 'Add'}
                     </button>
                 </div>
             </div>

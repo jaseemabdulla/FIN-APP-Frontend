@@ -142,16 +142,16 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
 
     return (
         <div 
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-[12vh] px-4"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-start justify-center pt-[12vh] px-4"
             onClick={onClose}
         >
             <div 
-                className="bg-[#1e1e1e] border border-gray-800 w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[60vh]"
+                className="bg-card-dark border border-border-main w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[60vh]"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Search Header */}
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-800/80 bg-gray-900/20">
-                    <span className="text-gray-400">
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-border-main bg-bg-dark/40">
+                    <span className="text-text-muted">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
@@ -163,9 +163,9 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Search person, description, category, notes..."
-                        className="flex-1 bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 py-1"
+                        className="flex-1 bg-transparent border-none outline-none text-text-main text-sm placeholder-text-muted py-1"
                     />
-                    <span className="text-[10px] text-gray-500 font-bold border border-gray-800 bg-gray-950 px-1.5 py-0.5 rounded uppercase select-none">
+                    <span className="text-[10px] text-text-muted font-bold border border-border-main bg-bg-dark px-1.5 py-0.5 rounded uppercase select-none">
                         Esc
                     </span>
                 </div>
@@ -173,21 +173,21 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
                 {/* Search Results Area */}
                 <div className="flex-1 overflow-y-auto max-h-[45vh] min-h-[150px] p-2" ref={resultsContainerRef}>
                     {loading && (
-                        <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                        <div className="flex flex-col items-center justify-center py-10 text-text-muted">
                             <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-primary mb-3"></div>
                             <span className="text-xs">Searching database...</span>
                         </div>
                     )}
 
                     {!loading && !query.trim() && (
-                        <div className="flex flex-col items-center justify-center py-12 text-gray-500 text-xs">
+                        <div className="flex flex-col items-center justify-center py-12 text-text-muted text-xs">
                             <span className="text-2xl mb-2">🔍</span>
                             <span>Type to search across all transactions</span>
                         </div>
                     )}
 
                     {!loading && query.trim() && results.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-12 text-gray-500 text-xs">
+                        <div className="flex flex-col items-center justify-center py-12 text-text-muted text-xs">
                             <span className="text-2xl mb-2">🙅</span>
                             <span>No matching transactions or debts found.</span>
                         </div>
@@ -205,13 +205,13 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
                                 onMouseEnter={() => setSelectedIndex(idx)}
                                 className={`flex items-center justify-between p-3 rounded-xl transition-all duration-200 cursor-pointer select-none border ${
                                     isSelected 
-                                    ? 'bg-white/5 border-gray-700/60 shadow' 
-                                    : 'border-transparent hover:bg-white/5'
+                                    ? 'bg-bg-dark border-border-main shadow' 
+                                    : 'border-transparent hover:bg-bg-dark/40'
                                 }`}
                             >
                                 <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
                                     {/* Icon */}
-                                    <div className="w-9 h-9 rounded-lg bg-gray-800/80 flex items-center justify-center text-lg shrink-0">
+                                    <div className="w-9 h-9 rounded-lg bg-bg-dark border border-border-main flex items-center justify-center text-lg shrink-0">
                                         {typeInfo.icon}
                                     </div>
 
@@ -223,17 +223,17 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
                                                 {typeInfo.label}
                                             </span>
                                             {result.category && (
-                                                <span className="text-[9px] text-gray-400 bg-gray-800 border border-gray-700/40 px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider">
+                                                <span className="text-[9px] text-text-muted bg-bg-dark border border-border-main px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider">
                                                     {result.category}
                                                 </span>
                                             )}
                                             {/* Date */}
-                                            <span className="text-[10px] text-gray-500 font-semibold font-sans">
+                                            <span className="text-[10px] text-text-muted font-semibold font-sans">
                                                 {result.date}
                                             </span>
                                         </div>
                                         {/* Description */}
-                                        <div className="text-xs text-gray-200 font-medium truncate mt-1">
+                                        <div className="text-xs text-text-main font-medium truncate mt-1">
                                             {result.description}
                                         </div>
                                     </div>
@@ -252,15 +252,15 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
                 
                 {/* Keyboard Shortcuts Footer */}
                 {results.length > 0 && (
-                    <div className="border-t border-gray-800/80 px-4 py-2 bg-gray-900/30 flex justify-between items-center text-[10px] text-gray-500 font-semibold select-none">
+                    <div className="border-t border-border-main px-4 py-2 bg-bg-dark/40 flex justify-between items-center text-[10px] text-text-muted font-semibold select-none">
                         <div className="flex items-center gap-1.5">
                             <span>Use keys</span>
-                            <span className="bg-gray-800 border border-gray-700 px-1 py-0.2 rounded font-mono">↑</span>
-                            <span className="bg-gray-800 border border-gray-700 px-1 py-0.2 rounded font-mono">↓</span>
+                            <span className="bg-bg-dark border border-border-main px-1 py-0.2 rounded font-mono">↑</span>
+                            <span className="bg-bg-dark border border-border-main px-1 py-0.2 rounded font-mono">↓</span>
                             <span>to navigate</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <span className="bg-gray-800 border border-gray-700 px-1 py-0.2 rounded font-mono">Enter</span>
+                            <span className="bg-bg-dark border border-border-main px-1 py-0.2 rounded font-mono">Enter</span>
                             <span>to select</span>
                         </div>
                     </div>
