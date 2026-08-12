@@ -151,14 +151,18 @@ export const getFundDetails = (id) => api.get(`funds/${id}/`);
 export const createFund = (data) => api.post('funds/', data);
 export const updateFund = (id, data) => api.put(`funds/${id}/`, data);
 export const deleteFund = (id) => api.delete(`funds/${id}/`);
-export const settleFund = (id, data) => api.post(`funds/${id}/settle/`, data);
-export const reopenFund = (id) => api.post(`funds/${id}/reopen/`);
 export const getFundReports = () => api.get('funds/reports/');
 
 export const createFundAddition = (data) => api.post('fund-additions/', data);
+export const updateFundAddition = (id, data) => api.put(`fund-additions/${id}/`, data);
 export const deleteFundAddition = (id) => api.delete(`fund-additions/${id}/`);
 
 export const createFundExpense = (data) => api.post('fund-expenses/', data, {
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    }
+});
+export const updateFundExpense = (id, data) => api.put(`fund-expenses/${id}/`, data, {
     headers: {
         'Content-Type': 'multipart/form-data'
     }

@@ -564,7 +564,14 @@ const IndividualDebtItem = ({ debt, onSettle, onEdit, onDelete, isHighlighted })
                             {new Date(debt.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                         </span>
                         {debt.description ? (
-                            <span className="text-sm text-text-main font-semibold">{debt.description}</span>
+                            <span className="text-sm text-text-main font-semibold flex items-center gap-1.5 flex-wrap">
+                                {debt.description}
+                                {debt.related_fund && (
+                                    <span className="bg-primary/20 text-primary text-[8px] font-black uppercase px-1.5 py-0.5 rounded tracking-wide border border-primary/20">
+                                        🏷️ Fund Debt
+                                    </span>
+                                )}
+                            </span>
                         ) : (
                             <span className="text-sm text-text-muted italic">No legacy notes</span>
                         )}

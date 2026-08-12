@@ -1,24 +1,25 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
     getFundReports, 
     getFundDetails, 
     createFund, 
-    settleFund, 
-    reopenFund, 
+    updateFund,
     deleteFund, 
     createFundAddition, 
+    updateFundAddition,
     deleteFundAddition, 
     createFundExpense, 
+    updateFundExpense,
     deleteFundExpense,
-    getCategories,
+    getLedgers,
+    createLedger,
     BACKEND_URL
 } from '../api';
 
 const FundList = () => {
     const location = useLocation();
     const [reports, setReports] = useState(null);
-    const [categories, setCategories] = useState([]);
     const [selectedFund, setSelectedFund] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('ACTIVE'); // ACTIVE or SETTLED
@@ -27,13 +28,35 @@ const FundList = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showAdditionModal, setShowAdditionModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
-    const [showSettleModal, setShowSettleModal] = useState(false);
+    
+    // Edit Modals
+    const [showEditFundModal, setShowEditFundModal] = useState(false);
+    const [showEditAdditionModal, setShowEditAdditionModal] = useState(false);
+    const [showEditExpenseModal, setShowEditExpenseModal] = useState(false);
+
+    // Submission states (loading & anti-duplicate)
+    const [savingCreate, setSavingCreate] = useState(false);
+    const [savingAddition, setSavingAddition] = useState(false);
+    const [savingExpense, setSavingExpense] = useState(false);
+    
+    const [savingEditFund, setSavingEditFund] = useState(false);
+    const [savingEditAddition, setSavingEditAddition] = useState(false);
+    const [savingEditExpense, setSavingEditExpense] = useState(false);
+
+    // Ledger Autocomplete states
+    const [ledgers, setLedgers] = useState([]);
+    const [ledgerQuery, setLedgerQuery] = useState('');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [showCreateLedgerInline, setShowCreateLedgerInline] = useState(false);
+    const [newPhone, setNewPhone] = useState('');
+    const [newEmail, setNewEmail] = useState('');
+    const [inlineError, setInlineError] = useState('');
+    const ledgerContainerRef = useRef(null);
 
     // Form states
     const [createForm, setCreateForm] = useState({
         title: '',
-        purpose: '',
-        provider: '',
+        ledger: '',
         initial_amount: '',
         received_date: new Date().toISOString().split('T')[0],
         notes: '',
@@ -49,7 +72,6 @@ const FundList = () => {
 
     const [expenseForm, setExpenseForm] = useState({
         title: '',
-        category: '',
         amount: '',
         date: new Date().toISOString().split('T')[0],
         description: '',
@@ -57,16 +79,37 @@ const FundList = () => {
         payment_mode: 'ACCOUNT'
     });
 
-    const [settleForm, setSettleForm] = useState({
-        settlement_date: new Date().toISOString().split('T')[0],
-        returned_amount: '0',
-        additional_amount_required: '0',
-        settlement_notes: '',
-        settlement_payment_mode: 'ACCOUNT'
+    const [editFundForm, setEditFundForm] = useState({
+        id: '',
+        title: '',
+        ledger: '',
+        initial_amount: '',
+        received_date: '',
+        notes: '',
+        payment_mode: 'ACCOUNT'
     });
 
-    const fetchReports = useCallback(async () => {
-        setLoading(true);
+    const [editAdditionForm, setEditAdditionForm] = useState({
+        id: '',
+        amount: '',
+        date: '',
+        notes: '',
+        payment_mode: 'ACCOUNT'
+    });
+
+    const [editExpenseForm, setEditExpenseForm] = useState({
+        id: '',
+        title: '',
+        amount: '',
+        date: '',
+        description: '',
+        attachment: null,
+        payment_mode: 'ACCOUNT',
+        attachment_url: ''
+    });
+
+    const fetchReports = useCallback(async (showPageLoader = true) => {
+        if (showPageLoader) setLoading(true);
         try {
             const res = await getFundReports();
             setReports(res.data);
@@ -79,26 +122,112 @@ const FundList = () => {
         } catch (error) {
             console.error("Error fetching funds", error);
         } finally {
-            setLoading(false);
+            if (showPageLoader) setLoading(false);
         }
     }, [selectedFund]);
 
-    const fetchCategories = async () => {
+    const fetchLedgers = async () => {
         try {
-            const res = await getCategories();
-            setCategories(res.data);
-            if (res.data.length > 0) {
-                setExpenseForm(prev => ({ ...prev, category: res.data[0].id }));
-            }
+            const res = await getLedgers();
+            setLedgers(res.data);
         } catch (error) {
-            console.error("Error fetching categories", error);
+            console.error("Error fetching ledgers list:", error);
         }
     };
 
     useEffect(() => {
         fetchReports();
-        fetchCategories();
+        fetchLedgers();
     }, []);
+
+    // Handle click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (ledgerContainerRef.current && !ledgerContainerRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleQueryChange = (val) => {
+        setLedgerQuery(val);
+        if (createForm.ledger) {
+            const currentLedger = ledgers.find(l => l.id === createForm.ledger);
+            if (currentLedger && currentLedger.name !== val) {
+                setCreateForm(prev => ({
+                    ...prev,
+                    ledger: '',
+                }));
+            }
+        }
+        setIsDropdownOpen(true);
+    };
+
+    const handleSelectLedger = (ledger) => {
+        if (showCreateModal) {
+            setCreateForm(prev => ({
+                ...prev,
+                ledger: ledger.id,
+            }));
+        } else if (showEditFundModal) {
+            setEditFundForm(prev => ({
+                ...prev,
+                ledger: ledger.id,
+            }));
+        }
+        setLedgerQuery(ledger.name);
+        setIsDropdownOpen(false);
+        setShowCreateLedgerInline(false);
+    };
+
+    const handleStartCreateInline = () => {
+        setNewPhone('');
+        setNewEmail('');
+        setInlineError('');
+        setShowCreateLedgerInline(true);
+        setIsDropdownOpen(false);
+    };
+
+    const handleCreateInlineSubmit = async (e) => {
+        e.preventDefault();
+        setInlineError('');
+        const trimmedName = ledgerQuery.trim();
+        if (!trimmedName) return;
+
+        try {
+            const payload = {
+                name: trimmedName,
+                phone: newPhone.trim(),
+                email: newEmail.trim()
+            };
+            const res = await createLedger(payload);
+            setLedgers(prev => [...prev, res.data]);
+            if (showCreateModal) {
+                setCreateForm(prev => ({
+                    ...prev,
+                    ledger: res.data.id,
+                }));
+            } else if (showEditFundModal) {
+                setEditFundForm(prev => ({
+                    ...prev,
+                    ledger: res.data.id,
+                }));
+            }
+            setShowCreateLedgerInline(false);
+        } catch (err) {
+            console.error(err);
+            const detail = err.response?.data?.name?.[0] || err.response?.data?.detail || "Failed to create ledger.";
+            setInlineError(detail);
+        }
+    };
+
+    const filteredLedgers = ledgerQuery.trim()
+        ? ledgers.filter(l => l.name.toLowerCase().includes(ledgerQuery.toLowerCase().trim()))
+        : ledgers;
+
+    const exactMatch = ledgers.some(l => l.name.toLowerCase() === ledgerQuery.toLowerCase().trim());
 
     useEffect(() => {
         if (reports) {
@@ -125,27 +254,38 @@ const FundList = () => {
 
     const handleCreateSubmit = async (e) => {
         e.preventDefault();
+        if (savingCreate) return;
+        if (!createForm.ledger) {
+            alert("Please select a Ledger or create a new one first.");
+            return;
+        }
+        setSavingCreate(true);
         try {
             await createFund(createForm);
+            alert("Purpose fund created successfully!");
             setShowCreateModal(false);
             setCreateForm({
                 title: '',
-                purpose: '',
-                provider: '',
+                ledger: '',
                 initial_amount: '',
                 received_date: new Date().toISOString().split('T')[0],
                 notes: '',
                 payment_mode: 'ACCOUNT'
             });
-            fetchReports();
+            setLedgerQuery('');
+            await fetchReports(false);
         } catch (error) {
             console.error("Failed to create fund", error);
-            alert("Error creating fund: " + (error.response?.data?.error || error.message));
+            alert("Error creating fund: " + (error.response?.data?.detail || error.message));
+        } finally {
+            setSavingCreate(false);
         }
     };
 
     const handleAdditionSubmit = async (e) => {
         e.preventDefault();
+        if (savingAddition) return;
+        setSavingAddition(true);
         try {
             await createFundAddition({
                 fund: selectedFund.id,
@@ -154,6 +294,7 @@ const FundList = () => {
                 notes: additionForm.notes,
                 payment_mode: additionForm.payment_mode
             });
+            alert("Funding entry (addition) added successfully!");
             setShowAdditionModal(false);
             setAdditionForm({
                 amount: '',
@@ -161,19 +302,22 @@ const FundList = () => {
                 notes: '',
                 payment_mode: 'ACCOUNT'
             });
-            fetchReports();
+            await fetchReports(false);
         } catch (error) {
             console.error("Failed to add funds", error);
-            alert("Error adding funds: " + (error.response?.data?.error || error.message));
+            alert("Error adding funds: " + (error.response?.data?.detail || error.message));
+        } finally {
+            setSavingAddition(false);
         }
     };
 
     const handleExpenseSubmit = async (e) => {
         e.preventDefault();
+        if (savingExpense) return;
+        setSavingExpense(true);
         const formData = new FormData();
         formData.append('fund', selectedFund.id);
         formData.append('title', expenseForm.title);
-        formData.append('category', expenseForm.category);
         formData.append('amount', expenseForm.amount);
         formData.append('date', expenseForm.date);
         formData.append('description', expenseForm.description);
@@ -184,49 +328,158 @@ const FundList = () => {
 
         try {
             await createFundExpense(formData);
+            alert("Fund entry (expense) saved successfully!");
             setShowExpenseModal(false);
             setExpenseForm({
                 title: '',
-                category: categories[0]?.id || '',
                 amount: '',
                 date: new Date().toISOString().split('T')[0],
                 description: '',
                 attachment: null,
                 payment_mode: 'ACCOUNT'
             });
-            fetchReports();
+            await fetchReports(false);
         } catch (error) {
             console.error("Failed to add expense", error);
-            alert("Error adding expense: " + (error.response?.data?.error || error.message));
+            alert("Error recording expense: " + (error.response?.data?.detail || error.message));
+        } finally {
+            setSavingExpense(false);
         }
     };
 
-    const handleSettleSubmit = async (e) => {
+    const handleOpenEditFund = (fund) => {
+        setEditFundForm({
+            id: fund.id,
+            title: fund.title,
+            ledger: fund.ledger || '',
+            initial_amount: fund.initial_amount.toString(),
+            received_date: fund.received_date,
+            notes: fund.notes || '',
+            payment_mode: fund.payment_mode || 'ACCOUNT'
+        });
+        setLedgerQuery(fund.ledger_details?.name || '');
+        setIsDropdownOpen(false);
+        setShowCreateLedgerInline(false);
+        setShowEditFundModal(true);
+    };
+
+    const handleEditFundSubmit = async (e) => {
         e.preventDefault();
+        if (savingEditFund) return;
+        if (!editFundForm.ledger) {
+            alert("Please select a Ledger or create a new one first.");
+            return;
+        }
+        setSavingEditFund(true);
         try {
-            await settleFund(selectedFund.id, settleForm);
-            setShowSettleModal(false);
-            setSettleForm({
-                settlement_date: new Date().toISOString().split('T')[0],
-                returned_amount: '0',
-                additional_amount_required: '0',
-                settlement_notes: '',
-                settlement_payment_mode: 'ACCOUNT'
-            });
-            fetchReports();
+            await updateFund(editFundForm.id, editFundForm);
+            alert("Purpose fund updated successfully!");
+            setShowEditFundModal(false);
+            await fetchReports(false);
         } catch (error) {
-            console.error("Failed to settle fund", error);
-            alert("Error settling fund: " + (error.response?.data?.error || error.message));
+            console.error("Failed to update fund", error);
+            alert("Error updating fund: " + (error.response?.data?.detail || error.message));
+        } finally {
+            setSavingEditFund(false);
         }
     };
 
-    const handleReopen = async (fundId) => {
-        if (!window.confirm("Are you sure you want to reopen this settled fund?")) return;
+    const handleDeleteInitial = async (fundId) => {
+        if (!window.confirm("Are you sure you want to delete the initial entry? This will set the initial amount to 0.")) return;
         try {
-            await reopenFund(fundId);
-            fetchReports();
+            const currentFund = reports.active_funds.find(f => f.id === fundId) || reports.settled_funds.find(f => f.id === fundId);
+            if (!currentFund) return;
+            const updatedData = {
+                title: currentFund.title,
+                ledger: currentFund.ledger,
+                initial_amount: "0.00",
+                received_date: currentFund.received_date,
+                notes: currentFund.notes || '',
+                payment_mode: currentFund.payment_mode || 'ACCOUNT'
+            };
+            await updateFund(fundId, updatedData);
+            alert("Initial entry deleted (set to 0) successfully!");
+            await fetchReports(false);
         } catch (error) {
-            console.error("Failed to reopen fund", error);
+            console.error("Failed to delete initial entry", error);
+            alert("Error deleting initial entry: " + (error.response?.data?.detail || error.message));
+        }
+    };
+
+    const handleOpenEditAddition = (item) => {
+        const additionId = item.id.replace('addition_', '');
+        setEditAdditionForm({
+            id: additionId,
+            amount: item.amount.toString(),
+            date: item.date,
+            notes: item.notes || '',
+            payment_mode: item.payment_mode || 'ACCOUNT'
+        });
+        setShowEditAdditionModal(true);
+    };
+
+    const handleEditAdditionSubmit = async (e) => {
+        e.preventDefault();
+        if (savingEditAddition) return;
+        setSavingEditAddition(true);
+        try {
+            await updateFundAddition(editAdditionForm.id, {
+                fund: selectedFund.id,
+                amount: editAdditionForm.amount,
+                date: editAdditionForm.date,
+                notes: editAdditionForm.notes,
+                payment_mode: editAdditionForm.payment_mode
+            });
+            alert("Funding entry updated successfully!");
+            setShowEditAdditionModal(false);
+            await fetchReports(false);
+        } catch (error) {
+            console.error("Failed to update funding entry", error);
+            alert("Error updating funding entry: " + (error.response?.data?.detail || error.message));
+        } finally {
+            setSavingEditAddition(false);
+        }
+    };
+
+    const handleOpenEditExpense = (item) => {
+        const expenseId = item.id.replace('expense_', '');
+        setEditExpenseForm({
+            id: expenseId,
+            title: item.title,
+            amount: item.amount.toString(),
+            date: item.date,
+            description: item.notes || '',
+            attachment: null,
+            payment_mode: item.payment_mode || 'ACCOUNT',
+            attachment_url: item.attachment_url || ''
+        });
+        setShowEditExpenseModal(true);
+    };
+
+    const handleEditExpenseSubmit = async (e) => {
+        e.preventDefault();
+        if (savingEditExpense) return;
+        setSavingEditExpense(true);
+        const formData = new FormData();
+        formData.append('fund', selectedFund.id);
+        formData.append('title', editExpenseForm.title);
+        formData.append('amount', editExpenseForm.amount);
+        formData.append('date', editExpenseForm.date);
+        formData.append('description', editExpenseForm.description);
+        formData.append('payment_mode', editExpenseForm.payment_mode);
+        if (editExpenseForm.attachment) {
+            formData.append('attachment', editExpenseForm.attachment);
+        }
+        try {
+            await updateFundExpense(editExpenseForm.id, formData);
+            alert("Expense entry updated successfully!");
+            setShowEditExpenseModal(false);
+            await fetchReports(false);
+        } catch (error) {
+            console.error("Failed to update expense entry", error);
+            alert("Error updating expense entry: " + (error.response?.data?.detail || error.message));
+        } finally {
+            setSavingEditExpense(false);
         }
     };
 
@@ -245,7 +498,7 @@ const FundList = () => {
         if (!window.confirm("Delete this funding addition?")) return;
         try {
             await deleteFundAddition(id);
-            fetchReports();
+            fetchReports(false);
         } catch (error) {
             console.error("Failed to delete addition", error);
         }
@@ -255,7 +508,7 @@ const FundList = () => {
         if (!window.confirm("Delete this expense item?")) return;
         try {
             await deleteFundExpense(id);
-            fetchReports();
+            fetchReports(false);
         } catch (error) {
             console.error("Failed to delete expense", error);
         }
@@ -326,27 +579,7 @@ const FundList = () => {
                 </button>
             </div>
 
-            {/* Overall Summary Cards */}
-            {summary && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
-                    <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/20 shadow-md">
-                        <span className="text-[10px] text-text-muted font-bold block uppercase tracking-wider">Total Received</span>
-                        <span className="text-lg sm:text-xl font-black text-emerald-500 mt-1 block">{formatCurrency(summary.total_received)}</span>
-                    </div>
-                    <div className="bg-rose-500/5 p-4 rounded-2xl border border-rose-500/20 shadow-md">
-                        <span className="text-[10px] text-text-muted font-bold block uppercase tracking-wider">Total Spent</span>
-                        <span className="text-lg sm:text-xl font-black text-rose-500 mt-1 block">{formatCurrency(summary.total_spent)}</span>
-                    </div>
-                    <div className="bg-secondary/5 p-4 rounded-2xl border border-secondary/20 shadow-md">
-                        <span className="text-[10px] text-text-muted font-bold block uppercase tracking-wider">Remaining</span>
-                        <span className="text-lg sm:text-xl font-black text-secondary mt-1 block">{formatCurrency(summary.remaining_balance)}</span>
-                    </div>
-                    <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 shadow-md">
-                        <span className="text-[10px] text-text-muted font-bold block uppercase tracking-wider">Active / Closed</span>
-                        <span className="text-lg sm:text-xl font-black text-primary mt-1 block">{summary.active_count}A / {summary.settled_count}C</span>
-                    </div>
-                </div>
-            )}
+
 
             {/* Fund Selection detail view */}
             {selectedFund && (
@@ -361,39 +594,17 @@ const FundList = () => {
                                     {selectedFund.status}
                                 </span>
                             </div>
-                            <p className="text-text-muted text-xs sm:text-sm mt-1.5"><strong className="text-text-main font-semibold">Provider:</strong> {selectedFund.provider} | <strong className="text-text-main font-semibold">Purpose:</strong> {selectedFund.purpose}</p>
+                            <p className="text-text-muted text-xs sm:text-sm mt-1.5"><strong className="text-text-main font-semibold">Ledger Profile:</strong> {selectedFund.ledger_details?.name || "Unknown"}</p>
                             {selectedFund.notes && (
                                 <p className="text-[11px] text-text-muted mt-1"><strong className="text-text-muted">Notes:</strong> {selectedFund.notes}</p>
                             )}
                         </div>
                         <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                            {selectedFund.status === 'ACTIVE' ? (
-                                <button 
-                                    onClick={() => {
-                                        setSettleForm(prev => ({
-                                            ...prev,
-                                            returned_amount: Math.max(0, parseFloat(selectedFund.remaining_balance)).toString(),
-                                            additional_amount_required: Math.max(0, -parseFloat(selectedFund.remaining_balance)).toString()
-                                        }));
-                                        setShowSettleModal(true);
-                                    }}
-                                    className="flex-1 md:flex-initial px-4 py-2 bg-success text-black rounded-xl text-xs font-extrabold transition-all cursor-pointer active:scale-95 shadow"
-                                >
-                                    Settle/Close
-                                </button>
-                            ) : (
-                                <button 
-                                    onClick={() => handleReopen(selectedFund.id)}
-                                    className="flex-1 md:flex-initial px-4 py-2 bg-warning text-black rounded-xl text-xs font-extrabold transition-all cursor-pointer active:scale-95 shadow"
-                                >
-                                    Reopen Fund
-                                </button>
-                            )}
                             <button 
                                 onClick={() => handleDeleteFund(selectedFund.id)}
                                 className="flex-1 md:flex-initial px-4 py-2 bg-error/15 hover:bg-error/25 border border-error/20 text-error rounded-xl text-xs font-extrabold transition-colors cursor-pointer"
                             >
-                                Delete
+                                Delete Fund
                             </button>
                             <button 
                                 onClick={() => setSelectedFund(null)}
@@ -427,7 +638,7 @@ const FundList = () => {
                     </div>
 
                     {/* Action buttons inside selected fund */}
-                    {selectedFund.status === 'ACTIVE' && (
+                    {(selectedFund.status === 'ACTIVE' || selectedFund.status === 'CLOSED') && (
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button 
                                 onClick={() => setShowAdditionModal(true)}
@@ -456,37 +667,62 @@ const FundList = () => {
                                     </div>
                                     <div className="bg-bg-dark/30 p-4 rounded-xl border border-border-main shadow-sm relative hover:border-border-main/80 transition-colors">
                                         
-                                        {/* Action deletion buttons */}
-                                        {selectedFund.status === 'ACTIVE' && (
-                                            <div className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {item.type === 'ADDITIONAL_FUND' && (
+                                        {/* Action Edit/Delete buttons */}
+                                        <div className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                            {item.type === 'INITIAL_FUND' && (
+                                                <>
+                                                    <button 
+                                                        onClick={() => handleOpenEditFund(selectedFund)}
+                                                        className="text-[10px] text-secondary hover:text-secondary-hover bg-secondary/10 px-2 py-0.5 border border-secondary/20 rounded cursor-pointer font-bold"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeleteInitial(selectedFund.id)}
+                                                        className="text-[10px] text-error hover:text-red-400 bg-error/10 px-2 py-0.5 border border-error/20 rounded cursor-pointer font-bold"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </>
+                                            )}
+                                            {item.type === 'ADDITIONAL_FUND' && (
+                                                <>
+                                                    <button 
+                                                        onClick={() => handleOpenEditAddition(item)}
+                                                        className="text-[10px] text-secondary hover:text-secondary-hover bg-secondary/10 px-2 py-0.5 border border-secondary/20 rounded cursor-pointer font-bold"
+                                                    >
+                                                        Edit
+                                                    </button>
                                                     <button 
                                                         onClick={() => handleDeleteAddition(item.id.replace('addition_', ''))}
                                                         className="text-[10px] text-error hover:text-red-400 bg-error/10 px-2 py-0.5 border border-error/20 rounded cursor-pointer font-bold"
                                                     >
                                                         Delete
                                                     </button>
-                                                )}
-                                                {item.type === 'EXPENSE' && (
+                                                </>
+                                            )}
+                                            {item.type === 'EXPENSE' && (
+                                                <>
+                                                    <button 
+                                                        onClick={() => handleOpenEditExpense(item)}
+                                                        className="text-[10px] text-secondary hover:text-secondary-hover bg-secondary/10 px-2 py-0.5 border border-secondary/20 rounded cursor-pointer font-bold"
+                                                    >
+                                                        Edit
+                                                    </button>
                                                     <button 
                                                         onClick={() => handleDeleteExpense(item.id.replace('expense_', ''))}
                                                         className="text-[10px] text-error hover:text-red-400 bg-error/10 px-2 py-0.5 border border-error/20 rounded cursor-pointer font-bold"
                                                     >
                                                         Delete
                                                     </button>
-                                                )}
-                                            </div>
-                                        )}
+                                                </>
+                                            )}
+                                        </div>
 
                                         <div className="flex justify-between items-start gap-4">
                                             <div>
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <span className="text-sm font-bold text-text-main">{item.title}</span>
-                                                    {item.category && (
-                                                        <span className="px-2 py-0.5 bg-card-dark text-text-muted rounded text-[9px] uppercase font-bold tracking-wide border border-border-main/50">
-                                                            {item.category}
-                                                        </span>
-                                                    )}
                                                 </div>
                                                 <span className="text-[10px] text-text-muted font-semibold mt-1 block">{item.date}</span>
                                                 <p className="text-xs text-text-muted mt-2 leading-relaxed">{item.notes || item.description}</p>
@@ -520,21 +756,6 @@ const FundList = () => {
                                                     <span className="text-sm sm:text-base font-extrabold text-error">-{formatCurrency(item.amount)}</span>
                                                 ) : item.type === 'INITIAL_FUND' || item.type === 'ADDITIONAL_FUND' ? (
                                                     <span className="text-sm sm:text-base font-extrabold text-emerald-500">+{formatCurrency(item.amount)}</span>
-                                                ) : item.type === 'SETTLEMENT' ? (
-                                                    <div className="space-y-1 text-right text-xs">
-                                                        {item.returned_amount > 0 && (
-                                                            <div>
-                                                                <span className="text-text-muted block text-[10px]">Returned</span>
-                                                                <span className="text-xs sm:text-sm font-extrabold text-emerald-500">{formatCurrency(item.returned_amount)}</span>
-                                                            </div>
-                                                        )}
-                                                        {item.additional_amount_required > 0 && (
-                                                            <div>
-                                                                <span className="text-text-muted block text-[10px]">Exceeded Cost</span>
-                                                                <span className="text-xs sm:text-sm font-extrabold text-error">{formatCurrency(item.additional_amount_required)}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
                                                 ) : null}
                                             </div>
                                         </div>
@@ -602,8 +823,7 @@ const FundList = () => {
                                         {fund.status}
                                     </span>
                                 </div>
-                                <span className="text-[10px] text-text-muted font-bold block">Provided by: {fund.provider}</span>
-                                <p className="text-xs text-text-muted mt-2 line-clamp-2 leading-relaxed">{fund.purpose}</p>
+                                <span className="text-[10px] text-text-muted font-bold block">Ledger Profile: {fund.ledger_details?.name || "Unknown"}</span>
                             </div>
 
                             <div className="mt-4 pt-3 border-t border-border-main grid grid-cols-3 gap-2 text-xs">
@@ -657,17 +877,6 @@ const FundList = () => {
                                     placeholder="e.g. Office Tech Fest 2026"
                                 />
                             </div>
-                            <div>
-                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Purpose *</label>
-                                <textarea 
-                                    required 
-                                    rows={2}
-                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary resize-none"
-                                    value={createForm.purpose}
-                                    onChange={e => setCreateForm({...createForm, purpose: e.target.value})}
-                                    placeholder="Brief purpose description"
-                                />
-                            </div>
                             <div className="grid grid-cols-2 gap-3">
                                  <div>
                                      <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Amount Received *</label>
@@ -694,18 +903,111 @@ const FundList = () => {
                                      </select>
                                  </div>
                              </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Provider Name *</label>
-                                    <input 
-                                        type="text" 
-                                        required 
-                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
-                                        value={createForm.provider}
-                                        onChange={e => setCreateForm({...createForm, provider: e.target.value})}
-                                        placeholder="Provider Person/Org"
-                                    />
+                            <div className="grid grid-cols-1 gap-3">
+                                <div ref={ledgerContainerRef} className="relative w-full">
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Ledger Profile *</label>
+                                    <div className="relative">
+                                        <input 
+                                            type="text" 
+                                            required 
+                                            value={ledgerQuery}
+                                            onChange={e => handleQueryChange(e.target.value)}
+                                            onFocus={() => setIsDropdownOpen(true)}
+                                            placeholder="Type to search or create a Ledger..."
+                                            className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
+                                        />
+                                        
+                                        {isDropdownOpen && (
+                                            <ul className="absolute z-50 w-full mt-1.5 bg-card-dark border border-border-main rounded-xl shadow-2xl max-h-48 overflow-y-auto divide-y divide-border-main animate-fade-in">
+                                                {filteredLedgers.map((ledger) => (
+                                                    <li
+                                                        key={ledger.id}
+                                                        onClick={() => handleSelectLedger(ledger)}
+                                                        className="px-4 py-2.5 text-sm text-text-muted cursor-pointer hover:bg-bg-dark/40 transition-colors flex justify-between items-center"
+                                                    >
+                                                        <span className="font-semibold text-text-main">{ledger.name}</span>
+                                                        {ledger.phone && <span className="text-xs text-text-muted font-mono">{ledger.phone}</span>}
+                                                    </li>
+                                                ))}
+                                                
+                                                {ledgerQuery.trim() && !exactMatch && (
+                                                    <li
+                                                        onClick={handleStartCreateInline}
+                                                        className="px-4 py-2.5 text-sm text-secondary hover:bg-bg-dark/40 cursor-pointer font-extrabold transition-colors flex items-center gap-1.5 border-t border-border-main"
+                                                    >
+                                                        ➕ Create Ledger: "{ledgerQuery.trim()}"
+                                                    </li>
+                                                )}
+                                                
+                                                {filteredLedgers.length === 0 && !ledgerQuery.trim() && (
+                                                    <li className="px-4 py-2.5 text-sm text-text-muted italic">
+                                                        No ledgers found. Start typing to create.
+                                                    </li>
+                                                )}
+                                            </ul>
+                                        )}
+                                    </div>
+                                    {createForm.ledger ? (
+                                        <div className="mt-1 text-xs text-success flex items-center gap-1">
+                                            <span>✓ Linked to: <span className="font-bold text-text-main">{ledgers.find(l => l.id === createForm.ledger)?.name}</span></span>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-1 text-xs text-text-muted">
+                                            Select a ledger contact for this fund.
+                                        </div>
+                                    )}
                                 </div>
+                                
+                                {showCreateLedgerInline && (
+                                    <div className="bg-bg-dark border border-border-main p-3 rounded-xl animate-fade-in text-sm grid gap-2">
+                                        <div className="font-extrabold text-secondary text-[10px] uppercase tracking-wider">
+                                            Create New Ledger: "{ledgerQuery.trim()}"
+                                        </div>
+                                        {inlineError && (
+                                            <div className="text-xs text-error">{inlineError}</div>
+                                        )}
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="block text-[9px] text-text-muted mb-0.5 uppercase font-semibold">Phone</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Phone number"
+                                                    value={newPhone}
+                                                    onChange={(e) => setNewPhone(e.target.value)}
+                                                    className="w-full bg-card-dark border border-border-main rounded-lg px-2.5 py-1.5 text-xs text-text-main font-mono outline-none focus:border-primary"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[9px] text-text-muted mb-0.5 uppercase font-semibold">Email</label>
+                                                <input
+                                                    type="email"
+                                                    placeholder="email@address.com"
+                                                    value={newEmail}
+                                                    onChange={(e) => setNewEmail(e.target.value)}
+                                                    className="w-full bg-card-dark border border-border-main rounded-lg px-2.5 py-1.5 text-xs text-text-main outline-none focus:border-primary"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 justify-end mt-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCreateLedgerInline(false)}
+                                                className="bg-card-dark border border-border-main hover:bg-bg-dark text-text-muted px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleCreateInlineSubmit}
+                                                className="bg-secondary hover:bg-secondary-hover text-black px-2.5 py-1 rounded text-xs font-extrabold transition-all cursor-pointer"
+                                            >
+                                                Create & Select
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Received Date *</label>
                                     <input 
@@ -716,22 +1018,30 @@ const FundList = () => {
                                         onChange={e => setCreateForm({...createForm, received_date: e.target.value})}
                                     />
                                 </div>
-                            </div>
-                            <div>
-                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Notes (Optional)</label>
-                                <input 
-                                    type="text" 
-                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
-                                    value={createForm.notes}
-                                    onChange={e => setCreateForm({...createForm, notes: e.target.value})}
-                                    placeholder="Any additional comments"
-                                />
+                                <div>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Notes (Optional)</label>
+                                    <input 
+                                        type="text" 
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
+                                        value={createForm.notes}
+                                        onChange={e => setCreateForm({...createForm, notes: e.target.value})}
+                                        placeholder="Any comments"
+                                    />
+                                </div>
                             </div>
                             <button 
                                 type="submit" 
-                                className="w-full py-3 bg-primary hover:bg-primary-hover text-black font-extrabold rounded-xl text-sm transition-all mt-2 cursor-pointer shadow active:scale-95"
+                                disabled={savingCreate}
+                                className={`w-full py-3 bg-primary hover:bg-primary-hover text-black font-extrabold rounded-xl text-sm transition-all mt-2 cursor-pointer shadow active:scale-95 flex items-center justify-center gap-2 ${savingCreate ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                Initialize Purpose Fund
+                                {savingCreate ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <span>Initialize Purpose Fund</span>
+                                )}
                             </button>
                         </form>
                     </div>
@@ -799,9 +1109,17 @@ const FundList = () => {
                             </div>
                             <button 
                                 type="submit" 
-                                className="w-full py-3 bg-secondary hover:bg-secondary-hover text-black font-extrabold rounded-xl text-sm transition-all mt-2 cursor-pointer shadow active:scale-95"
+                                disabled={savingAddition}
+                                className={`w-full py-3 bg-secondary hover:bg-secondary-hover text-black font-extrabold rounded-xl text-sm transition-all mt-2 cursor-pointer shadow active:scale-95 flex items-center justify-center gap-2 ${savingAddition ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                Confirm Top-up
+                                {savingAddition ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <span>Confirm Top-up</span>
+                                )}
                             </button>
                         </form>
                     </div>
@@ -832,20 +1150,7 @@ const FundList = () => {
                                     placeholder="e.g. Purchase refreshments"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Category *</label>
-                                    <select 
-                                        required 
-                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-error cursor-pointer"
-                                        value={expenseForm.category}
-                                        onChange={e => setExpenseForm({...expenseForm, category: e.target.value})}
-                                    >
-                                        {categories.map(cat => (
-                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Expense Date *</label>
                                     <input 
@@ -856,8 +1161,6 @@ const FundList = () => {
                                         onChange={e => setExpenseForm({...expenseForm, date: e.target.value})}
                                     />
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Amount Spent *</label>
                                     <input 
@@ -871,6 +1174,8 @@ const FundList = () => {
                                         placeholder="0.00"
                                     />
                                 </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Payment Mode *</label>
                                     <select 
@@ -881,6 +1186,14 @@ const FundList = () => {
                                         <option value="ACCOUNT">Account</option>
                                         <option value="CASH">Cash</option>
                                     </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Attachment (Receipt)</label>
+                                    <input 
+                                        type="file" 
+                                        className="w-full text-xs text-text-muted file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-bg-dark file:text-text-main hover:file:bg-bg-dark/80 cursor-pointer"
+                                        onChange={e => setExpenseForm({...expenseForm, attachment: e.target.files[0]})}
+                                    />
                                 </div>
                             </div>
                             <div>
@@ -893,79 +1206,253 @@ const FundList = () => {
                                     placeholder="Details of expense"
                                 />
                             </div>
-                            <div>
-                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Attachment (Receipt)</label>
-                                <input 
-                                    type="file" 
-                                    className="w-full text-xs text-text-muted file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-bg-dark file:text-text-main hover:file:bg-bg-dark/80 cursor-pointer"
-                                    onChange={e => setExpenseForm({...expenseForm, attachment: e.target.files[0]})}
-                                />
-                            </div>
                             <button 
                                 type="submit" 
-                                className="w-full py-3 bg-error hover:bg-red-500 text-white font-extrabold rounded-xl text-sm transition-colors mt-2 cursor-pointer shadow active:scale-95"
+                                disabled={savingExpense}
+                                className={`w-full py-3 bg-error hover:bg-red-500 text-white font-extrabold rounded-xl text-sm transition-colors mt-2 cursor-pointer shadow active:scale-95 flex items-center justify-center gap-2 ${savingExpense ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                Record Expense
+                                {savingExpense ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <span>Record Expense</span>
+                                )}
                             </button>
                         </form>
                     </div>
                 </div>
             )}
 
-            {/* Settle Fund Modal */}
-            {showSettleModal && selectedFund && (
+            {/* Edit Fund (Initial Entry) Modal */}
+            {showEditFundModal && (
                 <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-sm">
                     <div className="bg-card-dark p-6 rounded-2xl border border-border-main w-full max-w-md shadow-2xl relative">
                         <button 
-                            onClick={() => setShowSettleModal(false)}
+                            onClick={() => setShowEditFundModal(false)}
                             className="absolute right-4 top-4 text-text-muted hover:text-text-main cursor-pointer"
                         >
                             ✕
                         </button>
-                        <h3 className="text-lg font-black text-primary mb-4 uppercase tracking-wider">Settle & Close Fund</h3>
-                        <p className="text-xs text-text-muted mb-4 pb-2 border-b border-border-main/50">Settling: <span className="text-text-main font-semibold">{selectedFund.title}</span></p>
-                        <form onSubmit={handleSettleSubmit} className="space-y-4">
+                        <h3 className="text-lg font-black text-primary mb-4 uppercase tracking-wider">Edit Fund Info</h3>
+                        <form onSubmit={handleEditFundSubmit} className="space-y-4">
+                            <div>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Fund Title *</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
+                                    value={editFundForm.title}
+                                    onChange={e => setEditFundForm({...editFundForm, title: e.target.value})}
+                                    placeholder="e.g. Office Tech Fest 2026"
+                                />
+                            </div>
                             <div className="grid grid-cols-2 gap-3">
+                                 <div>
+                                     <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Initial Amount *</label>
+                                     <input 
+                                         type="number" 
+                                         required 
+                                         min="0"
+                                         step="0.01"
+                                         className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary font-mono"
+                                         value={editFundForm.initial_amount}
+                                         onChange={e => setEditFundForm({...editFundForm, initial_amount: e.target.value})}
+                                         placeholder="0.00"
+                                     />
+                                 </div>
+                                 <div>
+                                     <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Payment Mode *</label>
+                                     <select 
+                                         className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-primary cursor-pointer"
+                                         value={editFundForm.payment_mode}
+                                         onChange={e => setEditFundForm({...editFundForm, payment_mode: e.target.value})}
+                                     >
+                                         <option value="ACCOUNT">Account</option>
+                                         <option value="CASH">Cash</option>
+                                     </select>
+                                 </div>
+                             </div>
+                             
+                            <div className="grid grid-cols-1 gap-3">
+                                <div ref={ledgerContainerRef} className="relative w-full">
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Ledger Profile *</label>
+                                    <div className="relative">
+                                        <input 
+                                            type="text" 
+                                            required 
+                                            value={ledgerQuery}
+                                            onChange={e => handleQueryChange(e.target.value)}
+                                            onFocus={() => setIsDropdownOpen(true)}
+                                            placeholder="Type to search or create a Ledger..."
+                                            className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
+                                        />
+                                        
+                                        {isDropdownOpen && (
+                                            <ul className="absolute z-50 w-full mt-1.5 bg-card-dark border border-border-main rounded-xl shadow-2xl max-h-48 overflow-y-auto divide-y divide-border-main animate-fade-in">
+                                                {filteredLedgers.map((ledger) => (
+                                                    <li
+                                                        key={ledger.id}
+                                                        onClick={() => handleSelectLedger(ledger)}
+                                                        className="px-4 py-2.5 text-sm text-text-muted cursor-pointer hover:bg-bg-dark/40 transition-colors flex justify-between items-center"
+                                                    >
+                                                        <span className="font-semibold text-text-main">{ledger.name}</span>
+                                                        {ledger.phone && <span className="text-xs text-text-muted font-mono">{ledger.phone}</span>}
+                                                    </li>
+                                                ))}
+                                                
+                                                {ledgerQuery.trim() && !exactMatch && (
+                                                    <li
+                                                        onClick={handleStartCreateInline}
+                                                        className="px-4 py-2.5 text-sm text-secondary hover:bg-bg-dark/40 cursor-pointer font-extrabold transition-colors flex items-center gap-1.5 border-t border-border-main"
+                                                    >
+                                                        ➕ Create Ledger: "{ledgerQuery.trim()}"
+                                                    </li>
+                                                )}
+                                                
+                                                {filteredLedgers.length === 0 && !ledgerQuery.trim() && (
+                                                    <li className="px-4 py-2.5 text-sm text-text-muted italic">
+                                                        No ledgers found. Start typing to create.
+                                                    </li>
+                                                )}
+                                            </ul>
+                                        )}
+                                    </div>
+                                    {editFundForm.ledger ? (
+                                        <div className="mt-1 text-xs text-success flex items-center gap-1">
+                                            <span>✓ Linked to: <span className="font-bold text-text-main">{ledgers.find(l => l.id === editFundForm.ledger)?.name}</span></span>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-1 text-xs text-text-muted">
+                                            Select a ledger contact for this fund.
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                {showCreateLedgerInline && (
+                                    <div className="bg-bg-dark border border-border-main p-3 rounded-xl animate-fade-in text-sm grid gap-2">
+                                        <div className="font-extrabold text-secondary text-[10px] uppercase tracking-wider">
+                                            Create New Ledger: "{ledgerQuery.trim()}"
+                                        </div>
+                                        {inlineError && (
+                                            <div className="text-xs text-error">{inlineError}</div>
+                                        )}
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="block text-[9px] text-text-muted mb-0.5 uppercase font-semibold">Phone</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Phone number"
+                                                    value={newPhone}
+                                                    onChange={(e) => setNewPhone(e.target.value)}
+                                                    className="w-full bg-card-dark border border-border-main rounded-lg px-2.5 py-1.5 text-xs text-text-main font-mono outline-none focus:border-primary"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[9px] text-text-muted mb-0.5 uppercase font-semibold">Email</label>
+                                                <input
+                                                    type="email"
+                                                    placeholder="email@address.com"
+                                                    value={newEmail}
+                                                    onChange={(e) => setNewEmail(e.target.value)}
+                                                    className="w-full bg-card-dark border border-border-main rounded-lg px-2.5 py-1.5 text-xs text-text-main outline-none focus:border-primary"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 justify-end mt-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCreateLedgerInline(false)}
+                                                className="bg-card-dark border border-border-main hover:bg-bg-dark text-text-muted px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleCreateInlineSubmit}
+                                                className="bg-secondary hover:bg-secondary-hover text-black px-2.5 py-1 rounded text-xs font-extrabold transition-all cursor-pointer"
+                                            >
+                                                Create & Select
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Settlement Date *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Received Date *</label>
                                     <input 
                                         type="date" 
                                         required 
                                         className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-primary cursor-pointer"
-                                        value={settleForm.settlement_date}
-                                        onChange={e => setSettleForm({...settleForm, settlement_date: e.target.value})}
+                                        value={editFundForm.received_date}
+                                        onChange={e => setEditFundForm({...editFundForm, received_date: e.target.value})}
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Returned Leftover</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Notes (Optional)</label>
                                     <input 
-                                        type="number" 
-                                        min="0"
-                                        step="0.01"
-                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-primary font-mono"
-                                        value={settleForm.returned_amount}
-                                        onChange={e => setSettleForm({...settleForm, returned_amount: e.target.value})}
+                                        type="text" 
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
+                                        value={editFundForm.notes}
+                                        onChange={e => setEditFundForm({...editFundForm, notes: e.target.value})}
+                                        placeholder="Any comments"
                                     />
                                 </div>
                             </div>
+                            <button 
+                                type="submit" 
+                                disabled={savingEditFund}
+                                className={`w-full py-3 bg-primary hover:bg-primary-hover text-black font-extrabold rounded-xl text-sm transition-all mt-2 cursor-pointer shadow active:scale-95 flex items-center justify-center gap-2 ${savingEditFund ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {savingEditFund ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <span>Update Fund Info</span>
+                                )}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Addition Modal */}
+            {showEditAdditionModal && selectedFund && (
+                <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-sm">
+                    <div className="bg-card-dark p-6 rounded-2xl border border-border-main w-full max-w-sm shadow-2xl relative">
+                        <button 
+                            onClick={() => setShowEditAdditionModal(false)}
+                            className="absolute right-4 top-4 text-text-muted hover:text-text-main cursor-pointer"
+                        >
+                            ✕
+                        </button>
+                        <h3 className="text-lg font-black text-secondary mb-4 uppercase tracking-wider">Edit Funding Entry</h3>
+                        <form onSubmit={handleEditAdditionSubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Exceeded Required</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Amount *</label>
                                     <input 
                                         type="number" 
+                                        required 
                                         min="0"
                                         step="0.01"
-                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-primary font-mono"
-                                        value={settleForm.additional_amount_required}
-                                        onChange={e => setSettleForm({...settleForm, additional_amount_required: e.target.value})}
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-secondary font-mono"
+                                        value={editAdditionForm.amount}
+                                        onChange={e => setEditAdditionForm({...editAdditionForm, amount: e.target.value})}
+                                        placeholder="0.00"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Payment Mode *</label>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Mode *</label>
                                     <select 
-                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-primary cursor-pointer"
-                                        value={settleForm.settlement_payment_mode}
-                                        onChange={e => setSettleForm({...settleForm, settlement_payment_mode: e.target.value})}
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-secondary cursor-pointer"
+                                        value={editAdditionForm.payment_mode}
+                                        onChange={e => setEditAdditionForm({...editAdditionForm, payment_mode: e.target.value})}
                                     >
                                         <option value="ACCOUNT">Account</option>
                                         <option value="CASH">Cash</option>
@@ -973,21 +1460,141 @@ const FundList = () => {
                                 </div>
                             </div>
                             <div>
-                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Settlement Notes *</label>
-                                <textarea 
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Received Date *</label>
+                                <input 
+                                    type="date" 
                                     required 
-                                    rows={2}
-                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-primary resize-none"
-                                    value={settleForm.settlement_notes}
-                                    onChange={e => setSettleForm({...settleForm, settlement_notes: e.target.value})}
-                                    placeholder="e.g. Leftover returned to sponsor"
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-secondary cursor-pointer"
+                                    value={editAdditionForm.date}
+                                    onChange={e => setEditAdditionForm({...editAdditionForm, date: e.target.value})}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Notes (Optional)</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-secondary"
+                                    value={editAdditionForm.notes}
+                                    onChange={e => setEditAdditionForm({...editAdditionForm, notes: e.target.value})}
+                                    placeholder="e.g. Budget top-up"
                                 />
                             </div>
                             <button 
                                 type="submit" 
-                                className="w-full py-3 bg-primary hover:bg-primary-hover text-black font-extrabold rounded-xl text-sm transition-all mt-2 cursor-pointer shadow active:scale-95"
+                                disabled={savingEditAddition}
+                                className={`w-full py-3 bg-secondary hover:bg-secondary-hover text-black font-extrabold rounded-xl text-sm transition-all mt-2 cursor-pointer shadow active:scale-95 flex items-center justify-center gap-2 ${savingEditAddition ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                Finalize Settlement & Close
+                                {savingEditAddition ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <span>Update Funding Entry</span>
+                                )}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Expense Modal */}
+            {showEditExpenseModal && selectedFund && (
+                <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-sm">
+                    <div className="bg-card-dark p-6 rounded-2xl border border-border-main w-full max-w-md shadow-2xl relative">
+                        <button 
+                            onClick={() => setShowEditExpenseModal(false)}
+                            className="absolute right-4 top-4 text-text-muted hover:text-text-main cursor-pointer"
+                        >
+                            ✕
+                        </button>
+                        <h3 className="text-lg font-black text-error mb-4 uppercase tracking-wider">Edit Fund Expense</h3>
+                        <form onSubmit={handleEditExpenseSubmit} className="space-y-4">
+                            <div>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Expense Title *</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-error"
+                                    value={editExpenseForm.title}
+                                    onChange={e => setEditExpenseForm({...editExpenseForm, title: e.target.value})}
+                                    placeholder="e.g. Purchase refreshments"
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Expense Date *</label>
+                                    <input 
+                                        type="date" 
+                                        required 
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-error cursor-pointer"
+                                        value={editExpenseForm.date}
+                                        onChange={e => setEditExpenseForm({...editExpenseForm, date: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Amount Spent *</label>
+                                    <input 
+                                        type="number" 
+                                        required 
+                                        min="0"
+                                        step="0.01"
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-error font-mono"
+                                        value={editExpenseForm.amount}
+                                        onChange={e => setEditExpenseForm({...editExpenseForm, amount: e.target.value})}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Payment Mode *</label>
+                                    <select 
+                                        className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main focus:outline-none focus:border-error cursor-pointer"
+                                        value={editExpenseForm.payment_mode}
+                                        onChange={e => setEditExpenseForm({...editExpenseForm, payment_mode: e.target.value})}
+                                    >
+                                        <option value="ACCOUNT">Account</option>
+                                        <option value="CASH">Cash</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Attachment (Receipt)</label>
+                                    <input 
+                                        type="file" 
+                                        className="w-full text-xs text-text-muted file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-bg-dark file:text-text-main hover:file:bg-bg-dark/80 cursor-pointer"
+                                        onChange={e => setEditExpenseForm({...editExpenseForm, attachment: e.target.files[0]})}
+                                    />
+                                    {editExpenseForm.attachment_url && (
+                                        <div className="mt-1 text-[10px] text-text-muted">
+                                            Current: <a href={editExpenseForm.attachment_url.startsWith('http') ? editExpenseForm.attachment_url : `${BACKEND_URL}${editExpenseForm.attachment_url}`} target="_blank" rel="noopener noreferrer" className="text-secondary hover:underline font-bold">View Receipt</a>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-xs text-text-muted block mb-1 font-semibold uppercase">Notes / description</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full bg-bg-dark border border-border-main rounded-xl p-2.5 text-sm text-text-main placeholder-text-muted focus:outline-none focus:border-error"
+                                    value={editExpenseForm.description}
+                                    onChange={e => setEditExpenseForm({...editExpenseForm, description: e.target.value})}
+                                    placeholder="Details of expense"
+                                />
+                            </div>
+                            <button 
+                                type="submit" 
+                                disabled={savingEditExpense}
+                                className={`w-full py-3 bg-error hover:bg-red-500 text-white font-extrabold rounded-xl text-sm transition-colors mt-2 cursor-pointer shadow active:scale-95 flex items-center justify-center gap-2 ${savingEditExpense ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {savingEditExpense ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <span>Update Expense</span>
+                                )}
                             </button>
                         </form>
                     </div>
