@@ -115,12 +115,19 @@ export const logoutUser = (data) => api.post('auth/logout/', data);
 export const getCurrentUser = () => api.get('auth/me/');
 export const checkUsersExist = () => api.get('auth/exists/');
 
-export const getTransactions = (date) => api.get(`transactions/?date=${date}`);
+export const getTransactions = (dateOrParams) => {
+    if (typeof dateOrParams === 'object' && dateOrParams !== null) {
+        return api.get('transactions/', { params: dateOrParams });
+    }
+    return api.get('transactions/', { params: { date: dateOrParams } });
+};
 export const createTransaction = (data) => api.post('transactions/', data);
 export const updateTransaction = (id, data) => api.put(`transactions/${id}/`, data);
 export const deleteTransaction = (id) => api.delete(`transactions/${id}/`);
 export const getDailyReport = (date) => api.get(`reports/daily/?date=${date}`);
+export const getWeeklyReport = (date) => api.get(`reports/weekly/?date=${date}`);
 export const getMonthlyReport = (month, year) => api.get(`reports/monthly/?month=${month}&year=${year}`);
+export const getYearlyReport = (year) => api.get(`reports/yearly/?year=${year}`);
 export const exportReport = (month, year) => api.get(`reports/export/?month=${month}&year=${year}`, { responseType: 'blob' });
 export const exportPDFReport = (params) => api.get('reports/export-pdf/', { params, responseType: 'blob' });
 export const getDebts = () => api.get('debts/');

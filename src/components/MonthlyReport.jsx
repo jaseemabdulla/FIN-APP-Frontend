@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getMonthlyReport, exportPDFReport, deleteTransaction } from '../api';
+import { getWeeklyReport, getMonthlyReport, getYearlyReport, exportPDFReport, deleteTransaction } from '../api';
 import TransactionForm from './TransactionForm';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -16,7 +15,6 @@ const formatTransactionType = (type) => {
 };
 
 const MonthlyReport = () => {
-    const navigate = useNavigate();
     const today = new Date();
     const [reportType, setReportType] = useState('monthly'); // daily, weekly, monthly, yearly
     
@@ -51,22 +49,40 @@ const MonthlyReport = () => {
     const fetchReportData = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await getMonthlyReport(month, year);
-            setReport(res.data);
+            let res;
+            if (reportType === 'monthly') {
+                res = await getMonthlyReport(month, year);
+            } else if (reportType === 'weekly') {
+                res = await getWeeklyReport(date);
+            } else if (reportType === 'yearly') {
+                res = await getYearlyReport(year);
+            }
+            if (res) {
+                setReport(res.data);
+            } else {
+                setReport(null);
+            }
         } catch (err) {
             console.error(err);
+            setReport(null);
         } finally {
             setLoading(false);
         }
-    }, [month, year]);
+    }, [reportType, month, year, date]);
 
     useEffect(() => {
-        if (reportType === 'monthly') {
+        if (['weekly', 'monthly', 'yearly'].includes(reportType)) {
             fetchReportData();
         } else {
             setReport(null);
         }
     }, [reportType, fetchReportData]);
+
+    useEffect(() => {
+        if (reportType !== 'monthly' && activeTab === 'comparison') {
+            setActiveTab('categories');
+        }
+    }, [reportType, activeTab]);
 
     const handleAddMonth = () => {
         const exists = comparisonMonths.some(m => m.month === parseInt(selectedCompareMonth) && m.year === parseInt(selectedCompareYear));
@@ -148,9 +164,21 @@ const MonthlyReport = () => {
         setEditingTransaction(null);
     };
 
-    const getLastDateOfMonth = () => {
-        const lastDay = new Date(year, month, 0).getDate();
-        return `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    const getInvestmentDate = () => {
+        if (reportType === 'monthly') {
+            const lastDay = new Date(year, month, 0).getDate();
+            return `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+        } else if (reportType === 'weekly') {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diffToSunday = day === 0 ? 0 : 7 - day;
+            const sunday = new Date(d);
+            sunday.setDate(d.getDate() + diffToSunday);
+            return sunday.toISOString().split('T')[0];
+        } else if (reportType === 'yearly') {
+            return `${year}-12-31`;
+        }
+        return date;
     };
 
     const getSurplusInvestedAmount = () => {
@@ -239,21 +267,46 @@ const MonthlyReport = () => {
                 <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                     <div>
                         <h2 className="text-xl sm:text-2xl font-black text-secondary tracking-tight">Report Registry</h2>
-                        <p className="text-xs text-text-muted mt-0.5">Visualize statements and export transaction archives.</p>
+                        <p className="text-xs text-text-muted mt-0.5">
+                            {reportType === 'weekly' && report ? (
+                                <>Week: <span className="font-extrabold text-primary">{report.week_start}</span> to <span className="font-extrabold text-primary">{report.week_end}</span></>
+                            ) : (
+                                "Visualize statements and export transaction archives."
+                            )}
+                        </p>
                     </div>
                     
                     <div className="flex flex-wrap gap-2.5 items-center w-full md:w-auto">
-                        {/* Type Selector */}
-                        <select 
-                            value={reportType} 
-                            onChange={(e) => setReportType(e.target.value)} 
-                            className="bg-bg-dark p-2.5 rounded-xl border border-border-main outline-none focus:border-primary text-sm flex-1 md:flex-initial cursor-pointer text-text-main font-semibold"
-                        >
-                            <option value="daily">Daily Statement</option>
-                            <option value="weekly">Weekly Statement</option>
-                            <option value="monthly">Monthly Summary</option>
-                            <option value="yearly">Yearly Summary</option>
-                        </select>
+                        {/* Segmented Control for Report Type */}
+                        <div className="flex bg-bg-dark border border-border-main p-1 rounded-xl w-full md:w-auto">
+                            <button
+                                type="button"
+                                onClick={() => setReportType('weekly')}
+                                className={`flex-1 md:flex-none px-3.5 py-2 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                                    reportType === 'weekly' ? 'bg-card-dark text-primary shadow' : 'text-text-muted hover:text-text-main'
+                                }`}
+                            >
+                                Weekly
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setReportType('monthly')}
+                                className={`flex-1 md:flex-none px-3.5 py-2 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                                    reportType === 'monthly' ? 'bg-card-dark text-primary shadow' : 'text-text-muted hover:text-text-main'
+                                }`}
+                            >
+                                Monthly
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setReportType('yearly')}
+                                className={`flex-1 md:flex-none px-3.5 py-2 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                                    reportType === 'yearly' ? 'bg-card-dark text-primary shadow' : 'text-text-muted hover:text-text-main'
+                                }`}
+                            >
+                                Yearly
+                            </button>
+                        </div>
 
                         {/* Condition Controls */}
                         {reportType === 'monthly' && (
@@ -268,10 +321,11 @@ const MonthlyReport = () => {
                             <select value={year} onChange={(e) => setYear(e.target.value)} className="bg-bg-dark p-2.5 rounded-xl border border-border-main outline-none text-sm flex-1 md:flex-initial cursor-pointer text-text-main font-semibold">
                                 <option value="2025">2025</option>
                                 <option value="2026">2026</option>
+                                <option value="2027">2027</option>
                             </select>
                         )}
 
-                        {(reportType === 'daily' || reportType === 'weekly') && (
+                        {reportType === 'weekly' && (
                             <input 
                                 type="date" 
                                 value={date} 
@@ -299,7 +353,7 @@ const MonthlyReport = () => {
                 </div>
             )}
 
-            {!loading && reportType === 'monthly' && report && (
+            {!loading && ['weekly', 'monthly', 'yearly'].includes(reportType) && report && (
                 <>
                     {/* Day-to-Day Cash Flow Section */}
                     <div className="space-y-3 animate-fade-in">
@@ -408,7 +462,7 @@ const MonthlyReport = () => {
                                     <div className="p-4 sm:p-5">
                                         {report.category_breakdown.length === 0 ? (
                                             <div className="flex flex-col items-center justify-center py-12 text-text-muted">
-                                                <p className="text-sm font-semibold">No data available for this month.</p>
+                                                <p className="text-sm font-semibold">No data available for this {reportType === 'weekly' ? 'week' : reportType === 'yearly' ? 'year' : 'month'}.</p>
                                             </div>
                                         ) : (() => {
                                             // Group categories by type
@@ -924,7 +978,7 @@ const MonthlyReport = () => {
             )}
 
             {/* Placeholder for other types */}
-            {reportType !== 'monthly' && (
+            {!['weekly', 'monthly', 'yearly'].includes(reportType) && (
                 <div className="text-center py-16 text-text-muted bg-card-dark rounded-2xl border border-border-main border-dashed animate-fade-in">
                     <p className="text-sm font-semibold">Preview not active for {reportType} logs.</p>
                     <p className="text-xs text-text-muted mt-1.5 mb-4">Please download the PDF report to view complete daily, weekly, or yearly transaction charts.</p>
@@ -963,7 +1017,7 @@ const MonthlyReport = () => {
                             }}
                             prefillInvestment={prefillInvestment}
                             onCancelInvestment={() => setPrefillInvestment(null)}
-                            selectedDate={getLastDateOfMonth()}
+                            selectedDate={getInvestmentDate()}
                         />
                     </div>
                 </div>

@@ -92,6 +92,7 @@ const Dashboard = () => {
 
     // Get emoji/icon for category
     const getCategoryEmoji = (catName) => {
+        if (!catName) return '💰';
         const name = catName.toLowerCase();
         if (name.includes('food') || name.includes('eat') || name.includes('restaurant')) return '🍔';
         if (name.includes('rent') || name.includes('flat') || name.includes('house')) return '🏠';
@@ -274,7 +275,7 @@ const Dashboard = () => {
                                                 </td>
                                                 <td className="px-5 py-3.5 text-text-muted font-semibold flex items-center gap-1.5 mt-0.5">
                                                     <span>{getCategoryEmoji(txn.category_name)}</span>
-                                                    <span>{txn.category_name}</span>
+                                                    <span>{txn.category_name || 'Uncategorized'}</span>
                                                 </td>
                                                 <td className="px-5 py-3.5 text-text-main font-medium">
                                                     {txn.description}
@@ -333,7 +334,7 @@ const Dashboard = () => {
                                                     </div>
                                                     <div className="min-w-0">
                                                         <span className="text-xs font-semibold text-text-muted uppercase tracking-wider block">
-                                                            {txn.category_name}
+                                                            {txn.category_name || 'Uncategorized'}
                                                         </span>
                                                         {txn.description && (
                                                             <span className="text-sm text-text-main font-medium truncate block">

@@ -871,7 +871,7 @@ const TransactionForm = ({
                 </div>
 
                  {/* Category */}
-                 {!['FUND_CREDIT', 'FUND_EXPENSE', 'CASH_WITHDRAWAL', 'CASH_DEPOSIT'].includes(formData.transaction_type) && (
+                 {!['FUND_CREDIT', 'FUND_EXPENSE'].includes(formData.transaction_type) && (
                      <div className="w-full sm:w-[calc(50%-8px)] md:w-auto md:min-w-[130px]">
                         <label className="block text-xs text-text-muted mb-1 font-semibold uppercase tracking-wider">Category</label>
                         <select 

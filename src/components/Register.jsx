@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
-    const { register } = useAuth();
+    const { register, user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         username: '',
@@ -13,6 +13,21 @@ const Register = () => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-bg-dark flex items-center justify-center text-primary">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-sm font-semibold tracking-wider text-gray-400">Verifying session...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (user) {
+        return <Navigate to="/" replace />;
+    }
 
     const handleChange = (e) => {
         const { name, value } = e.target;
