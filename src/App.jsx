@@ -6,6 +6,7 @@ import DebtList from './components/DebtList';
 import CategoryManager from './components/CategoryManager';
 import EventList from './components/EventList';
 import FundList from './components/FundList';
+import InvestmentList from './components/InvestmentList';
 import GlobalSearchModal from './components/GlobalSearchModal';
 import LedgerManager from './components/LedgerManager';
 import Login from './components/Login';
@@ -124,6 +125,7 @@ function AppContent() {
                 <Link to="/" className={`px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${location.pathname === '/' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main'}`}>Daily</Link>
                 <Link to="/debts" className={`px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${location.pathname === '/debts' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main'}`}>Debts</Link>
                 <Link to="/monthly" className={`px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${location.pathname === '/monthly' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main'}`}>Reports</Link>
+                <Link to="/investments" className={`px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${location.pathname === '/investments' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main'}`}>Investments</Link>
                 <Link to="/funds" className={`px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${location.pathname === '/funds' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main'}`}>Funds</Link>
                 <Link to="/ledgers" className={`px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${location.pathname === '/ledgers' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main'}`}>Ledgers</Link>
                 <Link to="/events" className={`px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${location.pathname === '/events' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-main'}`}>Events</Link>
@@ -172,6 +174,13 @@ function AppContent() {
 
             {/* Navigation links inside drawer */}
             <div className="flex flex-col gap-2 flex-1">
+              <Link 
+                to="/investments" 
+                onClick={() => setIsDrawerOpen(false)} 
+                className={`py-3 px-3.5 rounded-xl text-sm font-semibold flex items-center gap-3 transition-colors ${location.pathname === '/investments' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-bg-dark hover:text-text-main'}`}
+              >
+                <span className="text-lg">📈</span> Investments Portfolio
+              </Link>
               <Link 
                 to="/funds" 
                 onClick={() => setIsDrawerOpen(false)} 
@@ -226,6 +235,7 @@ function AppContent() {
           <Route path="/ledgers" element={<ProtectedRoute><LedgerManager /></ProtectedRoute>} />
           <Route path="/events" element={<ProtectedRoute><EventList /></ProtectedRoute>} />
           <Route path="/funds" element={<ProtectedRoute><FundList /></ProtectedRoute>} />
+          <Route path="/investments" element={<ProtectedRoute><InvestmentList /></ProtectedRoute>} />
           <Route path="/categories" element={<ProtectedRoute><CategoryManager /></ProtectedRoute>} />
         </Routes>
       </main>

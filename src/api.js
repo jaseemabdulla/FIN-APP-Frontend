@@ -176,6 +176,12 @@ export const updateFundExpense = (id, data) => api.put(`fund-expenses/${id}/`, d
 });
 export const deleteFundExpense = (id) => api.delete(`fund-expenses/${id}/`);
 
+export const getInvestments = () => api.get('investments/');
+export const getInvestmentDetails = (id) => api.get(`investments/${id}/`);
+export const createInvestment = (data) => api.post('investments/', data);
+export const updateInvestment = (id, data) => api.put(`investments/${id}/`, data);
+export const deleteInvestment = (id) => api.delete(`investments/${id}/`);
+
 export const globalSearch = (query) => api.get(`search/?q=${query}`);
 
 export default api;

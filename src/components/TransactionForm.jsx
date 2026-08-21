@@ -8,7 +8,8 @@ import {
     getDebts, 
     getFunds, 
     createFundAddition, 
-    createFundExpense 
+    createFundExpense,
+    getInvestments
 } from '../api';
 
 const INITIAL_FORM_STATE = {
@@ -24,7 +25,8 @@ const INITIAL_FORM_STATE = {
     ledger: '',
     fund: '',
     title: '',
-    attachment: null
+    attachment: null,
+    related_investment: ''
 };
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
@@ -50,6 +52,7 @@ const TransactionForm = ({
     
     // Ledger autocomplete states
     const [ledgers, setLedgers] = useState([]);
+    const [investments, setInvestments] = useState([]);
     const [ledgerQuery, setLedgerQuery] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const containerRef = useRef(null);
@@ -108,6 +111,13 @@ const TransactionForm = ({
         } catch (err) {
             console.error("Failed to fetch funds", err);
         }
+
+        try {
+            const res = await getInvestments();
+            setInvestments(res.data);
+        } catch (err) {
+            console.error("Failed to fetch investments", err);
+        }
     }, [editingTransaction, prefillDebt, prefillInvestment]);
 
     useEffect(() => {
@@ -131,7 +141,8 @@ const TransactionForm = ({
                 ledger: editingTransaction.ledger || '',
                 fund: editingTransaction.fund || '',
                 title: editingTransaction.title || '',
-                attachment: null
+                attachment: null,
+                related_investment: editingTransaction.related_investment || ''
             });
             if (['DEBT_TAKEN', 'DEBT_GIVEN'].includes(editingTransaction.transaction_type)) {
                 setLedgerQuery(editingTransaction.description);
@@ -162,9 +173,10 @@ const TransactionForm = ({
             const investCat = categories.find(c => c.name.toLowerCase().includes('invest')) || categories[0];
             setFormData({
                 ...INITIAL_FORM_STATE,
-                amount: prefillInvestment.amount,
-                description: `Monthly Surplus Investment`,
-                transaction_type: 'INVESTMENT',
+                amount: prefillInvestment.amount || '',
+                description: prefillInvestment.description || `Surplus Investment`,
+                transaction_type: prefillInvestment.transaction_type || 'INVESTMENT',
+                related_investment: prefillInvestment.investmentId || '',
                 category: investCat ? investCat.id : '',
                 date: selectedDate || today
             });
@@ -242,7 +254,11 @@ const TransactionForm = ({
                 attachment: null,
                 amount: '',
                 description: '',
-                debt_description: ''
+                debt_description: '',
+                related_investment: '',
+                category: ['INVESTMENT', 'INVESTMENT_RETURN'].includes(value) && categories.find(c => c.name.toLowerCase().includes('invest'))
+                    ? categories.find(c => c.name.toLowerCase().includes('invest')).id 
+                    : prev.category
             }));
             setLedgerQuery('');
             setDebtQuery('');
@@ -345,6 +361,31 @@ const TransactionForm = ({
             if (enteredAmount > maxAllowed) {
                 alert(`Return amount cannot exceed the remaining debt amount: ₹${maxAllowed.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
                 return;
+            }
+        }
+
+        // Validate investment returns and additions
+        if (['INVESTMENT', 'INVESTMENT_RETURN'].includes(formData.transaction_type)) {
+            if (!formData.related_investment) {
+                alert("Please select an Investment Profile.");
+                return;
+            }
+            if (formData.transaction_type === 'INVESTMENT_RETURN') {
+                const selectedInvest = investments.find(inv => inv.id === parseInt(formData.related_investment));
+                if (!selectedInvest) {
+                    alert("Please select a valid Investment Profile.");
+                    return;
+                }
+                const enteredAmount = parseFloat(formData.amount);
+                let maxAllowed = parseFloat(selectedInvest.remaining_balance);
+                if (editingTransaction && editingTransaction.related_investment === selectedInvest.id) {
+                    maxAllowed += parseFloat(editingTransaction.amount);
+                }
+
+                if (enteredAmount > maxAllowed) {
+                    alert(`Withdrawal amount cannot exceed the available investment balance: ₹${maxAllowed.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                    return;
+                }
             }
         }
 
@@ -793,6 +834,24 @@ const TransactionForm = ({
                             )}
                         </div>
                     </div>
+                ) : ['INVESTMENT', 'INVESTMENT_RETURN'].includes(formData.transaction_type) ? (
+                    <div className="w-full md:flex-[1.5] md:min-w-[200px]">
+                        <label className="block text-xs text-text-muted mb-1 font-semibold uppercase tracking-wider">Select Investment Profile</label>
+                        <select 
+                            name="related_investment" 
+                            value={formData.related_investment} 
+                            onChange={handleChange}
+                            required
+                            className="w-full bg-bg-dark border border-border-main rounded-xl px-3 py-2.5 focus:border-primary outline-none text-text-main text-sm cursor-pointer"
+                        >
+                            <option value="" disabled>Select Investment</option>
+                            {investments.map(inv => (
+                                <option key={inv.id} value={inv.id}>
+                                    {inv.name} ({inv.investment_type === 'OTHER' ? inv.custom_type || 'Custom' : inv.investment_type.replace('_', ' ')}) - Bal: ₹{parseFloat(inv.remaining_balance).toLocaleString()}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 ) : null}
 
                 {/* Fund Expense Title Input */}
@@ -867,6 +926,7 @@ const TransactionForm = ({
                         <option value="CASH_WITHDRAWAL">Cash Withdrawal</option>
                         <option value="CASH_DEPOSIT">Cash Deposit</option>
                         <option value="INVESTMENT">Investment</option>
+                        <option value="INVESTMENT_RETURN">Investment Return</option>
                     </select>
                 </div>
 
