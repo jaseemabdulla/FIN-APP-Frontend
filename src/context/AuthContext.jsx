@@ -59,14 +59,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (username, email, password) => {
         const response = await registerUser({ username, email, password });
-        const { access, refresh, user: registeredUser } = response.data;
-        
-        localStorage.setItem('access_token', access);
-        localStorage.setItem('refresh_token', refresh);
-        
-        setUser(registeredUser);
-        setUsersExist(true);
-        return registeredUser;
+        return response.data;
     };
 
     const logout = async () => {

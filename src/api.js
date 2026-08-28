@@ -114,6 +114,10 @@ export const registerUser = (data) => api.post('auth/register/', data);
 export const logoutUser = (data) => api.post('auth/logout/', data);
 export const getCurrentUser = () => api.get('auth/me/');
 export const checkUsersExist = () => api.get('auth/exists/');
+export const verifyEmail = (uid, token) => api.post('auth/verify-email/', { uid, token });
+export const resendVerificationEmail = (email) => api.post('auth/resend-verification/', { email });
+export const forgotPassword = (email) => api.post('auth/forgot-password/', { email });
+export const resetPassword = (uid, token, password, confirmPassword) => api.post('auth/reset-password/', { uid, token, password, confirm_password: confirmPassword });
 
 export const getTransactions = (dateOrParams) => {
     if (typeof dateOrParams === 'object' && dateOrParams !== null) {

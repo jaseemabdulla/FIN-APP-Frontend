@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import PasswordInput from './PasswordInput';
 
 const Register = () => {
     const { register, user, loading: authLoading } = useAuth();
@@ -13,6 +14,7 @@ const Register = () => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [registered, setRegistered] = useState(false);
 
     if (authLoading) {
         return (
@@ -55,7 +57,7 @@ const Register = () => {
         setError(null);
         try {
             await register(username, email, password);
-            navigate('/');
+            setRegistered(true);
         } catch (err) {
             console.error(err);
             if (err.response && err.response.data) {
@@ -77,6 +79,36 @@ const Register = () => {
             setLoading(false);
         }
     };
+
+    if (registered) {
+        return (
+            <div className="min-h-[85vh] flex items-center justify-center px-4 bg-bg-dark text-text-main animate-fade-in">
+                <div className="w-full max-w-md bg-card-dark p-8 rounded-2xl shadow-2xl border border-border-main relative overflow-hidden text-center">
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary to-secondary"></div>
+                    
+                    <div className="w-16 h-16 bg-success/10 text-success rounded-full flex items-center justify-center mx-auto mb-6 border border-success/20">
+                        <svg className="w-8 h-8 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-2.25-1.5a2 2 0 00-2.22 0l-2.25 1.5" />
+                        </svg>
+                    </div>
+
+                    <h2 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4">
+                        Verify Your Email
+                    </h2>
+                    <p className="text-text-muted text-sm font-semibold mb-6 leading-relaxed">
+                        Thank you for registering! We've sent a verification email to <span className="text-primary font-bold">{formData.email}</span>. Please click the link in the email to activate your account.
+                    </p>
+
+                    <Link 
+                        to="/login"
+                        className="inline-block w-full bg-gradient-to-r from-primary to-secondary hover:opacity-95 text-black font-extrabold py-3.5 rounded-xl shadow-lg transition-all transform active:scale-[0.98] text-sm uppercase tracking-wider text-center"
+                    >
+                        Go to Sign In
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-[85vh] flex items-center justify-center px-4 bg-bg-dark text-text-main">
@@ -136,42 +168,36 @@ const Register = () => {
 
                     <div>
                         <label className="block text-sm font-semibold text-text-muted mb-2 uppercase tracking-wider">Password</label>
-                        <div className="relative">
-                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">
+                        <PasswordInput 
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            placeholder="Choose a secure password"
+                            className="focus:border-primary"
+                            required
+                            leftIcon={
                                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
-                            </span>
-                            <input 
-                                type="password"
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                placeholder="Choose a secure password"
-                                className="w-full bg-bg-dark border border-border-main rounded-xl py-3 pl-11 pr-4 text-text-main placeholder-text-muted focus:border-primary outline-none transition-all"
-                                required
-                            />
-                        </div>
+                            }
+                        />
                     </div>
 
                     <div>
                         <label className="block text-sm font-semibold text-text-muted mb-2 uppercase tracking-wider">Confirm Password</label>
-                        <div className="relative">
-                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">
+                        <PasswordInput 
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            placeholder="Re-enter password"
+                            className="focus:border-secondary"
+                            required
+                            leftIcon={
                                 <svg className="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                 </svg>
-                            </span>
-                            <input 
-                                type="password"
-                                name="confirmPassword"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                placeholder="Re-enter password"
-                                className="w-full bg-bg-dark border border-border-main rounded-xl py-3 pl-11 pr-4 text-text-main placeholder-text-muted focus:border-secondary outline-none transition-all"
-                                required
-                            />
-                        </div>
+                            }
+                        />
                     </div>
 
                     {error && (

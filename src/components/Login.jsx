@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import PasswordInput from './PasswordInput';
 
 const Login = () => {
     const { login, user, loading: authLoading } = useAuth();
@@ -8,7 +9,8 @@ const Login = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
+    const [unverifiedEmail, setUnverifiedEmail] = useState(null);
+ 
     if (authLoading) {
         return (
             <div className="min-h-screen bg-bg-dark flex items-center justify-center text-primary">
@@ -19,16 +21,16 @@ const Login = () => {
             </div>
         );
     }
-
+ 
     if (user) {
         return <Navigate to="/" replace />;
     }
-
+ 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
-
+ 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.username.trim() || !formData.password) {
@@ -37,12 +39,16 @@ const Login = () => {
         }
         setLoading(true);
         setError(null);
+        setUnverifiedEmail(null);
         try {
             await login(formData.username, formData.password);
             navigate('/');
         } catch (err) {
             console.error(err);
-            if (err.response) {
+            if (err.response && err.response.data && err.response.data.email_unverified) {
+                setError("Please verify your email before logging in.");
+                setUnverifiedEmail(err.response.data.email || true);
+            } else if (err.response) {
                 if (err.response.status >= 400 && err.response.status < 500) {
                     setError("Invalid credentials.");
                 } else {
@@ -55,7 +61,7 @@ const Login = () => {
             setLoading(false);
         }
     };
-
+ 
     return (
         <div className="min-h-[85vh] flex items-center justify-center px-4 bg-bg-dark text-text-main">
             <div className="w-full max-w-md bg-card-dark p-8 rounded-2xl shadow-2xl border border-border-main relative overflow-hidden animate-fade-in">
@@ -70,7 +76,7 @@ const Login = () => {
                         Sign in to manage your daily finances
                     </p>
                 </div>
-
+ 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label className="block text-sm font-semibold text-text-muted mb-2 uppercase tracking-wider">Username</label>
@@ -91,33 +97,47 @@ const Login = () => {
                             />
                         </div>
                     </div>
-
+ 
                     <div>
-                        <label className="block text-sm font-semibold text-text-muted mb-2 uppercase tracking-wider">Password</label>
-                        <div className="relative">
-                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm font-semibold text-text-muted uppercase tracking-wider">Password</label>
+                            <Link to="/forgot-password" className="text-xs font-bold text-primary hover:text-primary-hover transition-colors">
+                                Forgot Password?
+                            </Link>
+                        </div>
+                        <PasswordInput 
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            placeholder="Enter password"
+                            className="focus:border-secondary"
+                            required
+                            leftIcon={
                                 <svg className="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
-                            </span>
-                            <input 
-                                type="password"
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                placeholder="Enter password"
-                                className="w-full bg-bg-dark border border-border-main rounded-xl py-3.5 pl-11 pr-4 text-text-main placeholder-text-muted focus:border-secondary outline-none transition-all"
-                                required
-                            />
-                        </div>
+                            }
+                        />
                     </div>
-
+ 
                     {error && (
-                        <div className="p-3.5 bg-error/10 text-error text-xs rounded-xl border border-error/20 flex items-start gap-2.5 font-semibold">
-                            <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <span>{error}</span>
+                        <div className="p-3.5 bg-error/10 text-error text-xs rounded-xl border border-error/20 flex flex-col gap-2 font-semibold">
+                            <div className="flex items-start gap-2.5">
+                                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <span>{error}</span>
+                            </div>
+                            {unverifiedEmail && (
+                                <div className="pl-7.5">
+                                    <Link 
+                                        to={`/resend-verification?email=${encodeURIComponent(typeof unverifiedEmail === 'string' ? unverifiedEmail : '')}`}
+                                        className="text-secondary hover:text-secondary-hover underline font-bold"
+                                    >
+                                        Resend verification email
+                                    </Link>
+                                </div>
+                            )}
                         </div>
                     )}
 
