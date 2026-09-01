@@ -34,18 +34,33 @@ const MonthlyReport = () => {
     const [selectedDebtCategory, setSelectedDebtCategory] = useState('borrowed');
     const [detailedTransaction, setDetailedTransaction] = useState(null);
 
-    // Monthly comparison report states
+    // Extended comparison report states (Weekly, Monthly, Yearly)
+    const [comparisonMode, setComparisonMode] = useState('monthly'); // 'weekly', 'monthly', 'yearly'
+
+    // Weekly comparison state
+    const todayStr = today.toISOString().split('T')[0];
+    const prevWeekDateObj = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const prevWeekStr = prevWeekDateObj.toISOString().split('T')[0];
+    const [comparisonWeeks, setComparisonWeeks] = useState([todayStr, prevWeekStr]);
+    const [selectedCompareWeekDate, setSelectedCompareWeekDate] = useState(todayStr);
+
+    // Monthly comparison state
     const currentMonthObj = { month: today.getMonth() + 1, year: today.getFullYear() };
     const prevMonth = today.getMonth() === 0 ? 12 : today.getMonth();
     const prevYear = today.getMonth() === 0 ? today.getFullYear() - 1 : today.getFullYear();
     const prevMonthObj = { month: prevMonth, year: prevYear };
-
     const [comparisonMonths, setComparisonMonths] = useState([currentMonthObj, prevMonthObj]);
-    const [comparisonResults, setComparisonResults] = useState(null);
-    const [comparisonLoading, setComparisonLoading] = useState(false);
     const [selectedCompareMonth, setSelectedCompareMonth] = useState(today.getMonth() + 1);
     const [selectedCompareYear, setSelectedCompareYear] = useState(today.getFullYear());
-    
+
+    // Yearly comparison state
+    const currentYearNum = today.getFullYear();
+    const [comparisonYears, setComparisonYears] = useState([currentYearNum, currentYearNum - 1]);
+    const [selectedCompareYearForYearly, setSelectedCompareYearForYearly] = useState(currentYearNum);
+
+    const [comparisonResults, setComparisonResults] = useState(null);
+    const [comparisonLoading, setComparisonLoading] = useState(false);
+
     const fetchReportData = useCallback(async () => {
         setLoading(true);
         try {
@@ -78,11 +93,30 @@ const MonthlyReport = () => {
         }
     }, [reportType, fetchReportData]);
 
+    // Sync comparisonMode when main reportType changes
     useEffect(() => {
-        if (reportType !== 'monthly' && activeTab === 'comparison') {
-            setActiveTab('categories');
+        if (['weekly', 'monthly', 'yearly'].includes(reportType)) {
+            setComparisonMode(reportType);
         }
-    }, [reportType, activeTab]);
+    }, [reportType]);
+
+    // Handlers for adding/removing comparison periods
+    const handleAddWeek = () => {
+        if (!selectedCompareWeekDate) return;
+        if (comparisonWeeks.includes(selectedCompareWeekDate)) {
+            alert("This week date is already added to comparison.");
+            return;
+        }
+        setComparisonWeeks(prev => [...prev, selectedCompareWeekDate]);
+    };
+
+    const handleRemoveWeek = (index) => {
+        if (comparisonWeeks.length <= 2) {
+            alert("You need at least two weeks for comparison.");
+            return;
+        }
+        setComparisonWeeks(prev => prev.filter((_, idx) => idx !== index));
+    };
 
     const handleAddMonth = () => {
         const exists = comparisonMonths.some(m => m.month === parseInt(selectedCompareMonth) && m.year === parseInt(selectedCompareYear));
@@ -101,30 +135,69 @@ const MonthlyReport = () => {
         setComparisonMonths(prev => prev.filter((_, idx) => idx !== index));
     };
 
+    const handleAddYear = () => {
+        const yearInt = parseInt(selectedCompareYearForYearly);
+        if (comparisonYears.includes(yearInt)) {
+            alert("This year is already added to comparison.");
+            return;
+        }
+        setComparisonYears(prev => [...prev, yearInt]);
+    };
+
+    const handleRemoveYear = (index) => {
+        if (comparisonYears.length <= 2) {
+            alert("You need at least two years for comparison.");
+            return;
+        }
+        setComparisonYears(prev => prev.filter((_, idx) => idx !== index));
+    };
+
     const fetchComparisonData = useCallback(async () => {
-        if (comparisonMonths.length < 2) return;
         setComparisonLoading(true);
         try {
-            const promises = comparisonMonths.map(m => getMonthlyReport(m.month, m.year));
-            const responses = await Promise.all(promises);
-            const reports = responses.map((res, index) => ({
-                month: comparisonMonths[index].month,
-                year: comparisonMonths[index].year,
-                label: `${new Date(0, comparisonMonths[index].month - 1).toLocaleString('default', { month: 'short' })} ${comparisonMonths[index].year}`,
-                report: res.data
-            }));
-            
+            let reports = [];
+            if (comparisonMode === 'weekly') {
+                if (comparisonWeeks.length < 2) return;
+                const promises = comparisonWeeks.map(d => getWeeklyReport(d));
+                const responses = await Promise.all(promises);
+                reports = responses.map((res, index) => {
+                    const data = res?.data || {};
+                    let label = `Week of ${comparisonWeeks[index]}`;
+                    if (data.week_start && data.week_end) {
+                        label = `${data.week_start} - ${data.week_end}`;
+                    }
+                    return { label, report: data };
+                });
+            } else if (comparisonMode === 'yearly') {
+                if (comparisonYears.length < 2) return;
+                const promises = comparisonYears.map(y => getYearlyReport(y));
+                const responses = await Promise.all(promises);
+                reports = responses.map((res, index) => ({
+                    label: `${comparisonYears[index]}`,
+                    report: res?.data || {}
+                }));
+            } else {
+                // Monthly
+                if (comparisonMonths.length < 2) return;
+                const promises = comparisonMonths.map(m => getMonthlyReport(m.month, m.year));
+                const responses = await Promise.all(promises);
+                reports = responses.map((res, index) => ({
+                    label: `${new Date(0, comparisonMonths[index].month - 1).toLocaleString('default', { month: 'short' })} ${comparisonMonths[index].year}`,
+                    report: res?.data || {}
+                }));
+            }
+
             const categoriesMap = {};
-            const monthLabels = reports.map(r => r.label);
+            const periodLabels = reports.map(r => r.label);
 
             reports.forEach(r => {
-                const breakdown = r.report.category_breakdown || [];
+                const breakdown = r.report?.category_breakdown || [];
                 breakdown.forEach(cat => {
                     if (cat.type === 'EXPENSE') {
                         const catName = cat.category || 'Uncategorized';
                         if (!categoriesMap[catName]) {
                             categoriesMap[catName] = { category: catName };
-                            monthLabels.forEach(label => {
+                            periodLabels.forEach(label => {
                                 categoriesMap[catName][label] = 0;
                             });
                         }
@@ -136,15 +209,15 @@ const MonthlyReport = () => {
             const comparisonRows = Object.values(categoriesMap);
             setComparisonResults({
                 rows: comparisonRows,
-                months: reports,
-                monthLabels
+                reports,
+                monthLabels: periodLabels
             });
         } catch (err) {
             console.error("Error fetching comparison data", err);
         } finally {
             setComparisonLoading(false);
         }
-    }, [comparisonMonths]);
+    }, [comparisonMode, comparisonWeeks, comparisonMonths, comparisonYears]);
 
     useEffect(() => {
         if (activeTab === 'comparison') {
@@ -778,12 +851,12 @@ const MonthlyReport = () => {
                                     <div className="bg-card-dark rounded-2xl p-4 sm:p-5 border border-emerald-500/20 bg-gradient-to-br from-card-dark to-emerald-500/5">
                                         <h4 className="font-extrabold text-emerald-500 text-sm sm:text-base mb-4 border-b border-border-main/60 pb-2 flex justify-between gap-2">
                                             <span>Total Credited (Inflows)</span>
-                                            <span>+₹{parseFloat(report.total_credit).toLocaleString()}</span>
+                                            <span>+₹{parseFloat(report.total_credit || 0).toLocaleString()}</span>
                                         </h4>
                                         <ul className="space-y-3">
                                             <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
                                                 <span className="text-text-muted">Standard Category Income</span>
-                                                <span className="font-bold text-emerald-500">+₹{parseFloat(report.total_income).toLocaleString()}</span>
+                                                <span className="font-bold text-emerald-500">+₹{parseFloat(report.total_income || 0).toLocaleString()}</span>
                                             </li>
                                             <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
                                                 <span className="text-text-muted">Debts Borrowed (Taken)</span>
@@ -793,6 +866,14 @@ const MonthlyReport = () => {
                                                 <span className="text-text-muted">Debt Repayments Received</span>
                                                 <span className="font-bold text-emerald-500">+₹{parseFloat(report.debt_breakdown?.debt_given_return || 0).toLocaleString()}</span>
                                             </li>
+                                            <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
+                                                <span className="text-text-muted">Investment Returns</span>
+                                                <span className="font-bold text-emerald-500">+₹{parseFloat(report.total_investment_return || 0).toLocaleString()}</span>
+                                            </li>
+                                            <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
+                                                <span className="text-text-muted">Fund Inflows</span>
+                                                <span className="font-bold text-emerald-500">+₹{parseFloat(report.total_fund_inc || 0).toLocaleString()}</span>
+                                            </li>
                                         </ul>
                                     </div>
 
@@ -800,16 +881,16 @@ const MonthlyReport = () => {
                                     <div className="bg-card-dark rounded-2xl p-4 sm:p-5 border border-rose-500/20 bg-gradient-to-br from-card-dark to-rose-500/5">
                                         <h4 className="font-extrabold text-rose-500 text-sm sm:text-base mb-4 border-b border-border-main/60 pb-2 flex justify-between gap-2">
                                             <span>Total Debited (Outflows)</span>
-                                            <span>-₹{parseFloat(report.total_debit).toLocaleString()}</span>
+                                            <span>-₹{parseFloat(report.total_debit || 0).toLocaleString()}</span>
                                         </h4>
                                         <ul className="space-y-3">
                                             <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
                                                 <span className="text-text-muted">Standard Category Expenses</span>
-                                                <span className="font-bold text-error">-₹{parseFloat(report.total_expense).toLocaleString()}</span>
+                                                <span className="font-bold text-error">-₹{parseFloat(report.total_expense || 0).toLocaleString()}</span>
                                             </li>
                                             <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
                                                 <span className="text-text-muted">Investments Allocated</span>
-                                                <span className="font-bold text-error">-₹{parseFloat(report.total_investment).toLocaleString()}</span>
+                                                <span className="font-bold text-error">-₹{parseFloat(report.total_investment || 0).toLocaleString()}</span>
                                             </li>
                                             <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
                                                 <span className="text-text-muted">Debts Given (Lent Out)</span>
@@ -819,6 +900,10 @@ const MonthlyReport = () => {
                                                 <span className="text-text-muted">Debt Repayments Made</span>
                                                 <span className="font-bold text-error">-₹{parseFloat(report.debt_breakdown?.debt_taken_return || 0).toLocaleString()}</span>
                                             </li>
+                                            <li className="flex justify-between text-xs py-1 border-b border-border-main/30 font-semibold">
+                                                <span className="text-text-muted">Fund Outflows</span>
+                                                <span className="font-bold text-error">-₹{parseFloat(report.total_fund_dec || 0).toLocaleString()}</span>
+                                            </li>
                                         </ul>
                                     </div>
                                 </div>
@@ -827,12 +912,63 @@ const MonthlyReport = () => {
 
                         {activeTab === 'comparison' && (
                             <div className="space-y-4 animate-fade-in">
-                                <h3 className="text-base sm:text-lg font-extrabold text-text-main">Category Comparison (Expenses)</h3>
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <h3 className="text-base sm:text-lg font-extrabold text-text-main">Category Comparison (Expenses)</h3>
+                                    
+                                    {/* Comparison Mode Selector */}
+                                    <div className="flex bg-bg-dark border border-border-main p-1 rounded-xl w-full sm:w-auto">
+                                        <button
+                                            type="button"
+                                            onClick={() => setComparisonMode('weekly')}
+                                            className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                                                comparisonMode === 'weekly' ? 'bg-card-dark text-primary shadow' : 'text-text-muted hover:text-text-main'
+                                            }`}
+                                        >
+                                            Weekly
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setComparisonMode('monthly')}
+                                            className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                                                comparisonMode === 'monthly' ? 'bg-card-dark text-primary shadow' : 'text-text-muted hover:text-text-main'
+                                            }`}
+                                        >
+                                            Monthly
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setComparisonMode('yearly')}
+                                            className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-all ${
+                                                comparisonMode === 'yearly' ? 'bg-card-dark text-primary shadow' : 'text-text-muted hover:text-text-main'
+                                            }`}
+                                        >
+                                            Yearly
+                                        </button>
+                                    </div>
+                                </div>
                                 
-                                {/* Selected months list */}
+                                {/* Selected periods list */}
                                 <div className="flex flex-wrap gap-2 mb-4 items-center">
-                                    <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Compared Months:</span>
-                                    {comparisonMonths.map((m, idx) => (
+                                    <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">
+                                        Compared {comparisonMode === 'weekly' ? 'Weeks' : comparisonMode === 'yearly' ? 'Years' : 'Months'}:
+                                    </span>
+                                    {comparisonMode === 'weekly' && comparisonWeeks.map((wDate, idx) => (
+                                        <div key={idx} className="flex items-center gap-1.5 bg-bg-dark border border-border-main rounded-full px-3 py-1 text-xs">
+                                            <span className="text-text-main font-semibold">
+                                                {comparisonResults?.reports?.[idx]?.label || `Week of ${wDate}`}
+                                            </span>
+                                            <button 
+                                                type="button"
+                                                onClick={() => handleRemoveWeek(idx)} 
+                                                className="text-error hover:text-red-400 font-bold ml-1 cursor-pointer text-xs focus:outline-none"
+                                                title="Remove week"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+
+                                    {comparisonMode === 'monthly' && comparisonMonths.map((m, idx) => (
                                         <div key={idx} className="flex items-center gap-1.5 bg-bg-dark border border-border-main rounded-full px-3 py-1 text-xs">
                                             <span className="text-text-main font-semibold">
                                                 {new Date(0, m.month - 1).toLocaleString('default', { month: 'short' })} {m.year}
@@ -847,36 +983,93 @@ const MonthlyReport = () => {
                                             </button>
                                         </div>
                                     ))}
+
+                                    {comparisonMode === 'yearly' && comparisonYears.map((yr, idx) => (
+                                        <div key={idx} className="flex items-center gap-1.5 bg-bg-dark border border-border-main rounded-full px-3 py-1 text-xs">
+                                            <span className="text-text-main font-semibold">{yr}</span>
+                                            <button 
+                                                type="button"
+                                                onClick={() => handleRemoveYear(idx)} 
+                                                className="text-error hover:text-red-400 font-bold ml-1 cursor-pointer text-xs focus:outline-none"
+                                                title="Remove year"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
 
-                                {/* Month adder controls */}
+                                {/* Period adder controls */}
                                 <div className="flex flex-wrap gap-2.5 items-center bg-bg-dark/40 p-3 rounded-xl border border-border-main w-max max-w-full">
-                                    <div className="flex items-center gap-2">
-                                        <select 
-                                            value={selectedCompareMonth} 
-                                            onChange={(e) => setSelectedCompareMonth(parseInt(e.target.value))} 
-                                            className="bg-bg-dark text-text-main border border-border-main rounded-lg px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer font-semibold"
-                                        >
-                                            {Array.from({ length: 12 }, (_, i) => (
-                                                <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
-                                            ))}
-                                        </select>
-                                        <select 
-                                            value={selectedCompareYear} 
-                                            onChange={(e) => setSelectedCompareYear(parseInt(e.target.value))} 
-                                            className="bg-bg-dark text-text-main border border-border-main rounded-lg px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer font-semibold"
-                                        >
-                                            <option value="2025">2025</option>
-                                            <option value="2026">2026</option>
-                                        </select>
-                                    </div>
-                                    <button 
-                                        type="button"
-                                        onClick={handleAddMonth} 
-                                        className="bg-primary hover:bg-primary-hover text-black px-4 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold transition-all cursor-pointer shrink-0 shadow"
-                                    >
-                                        + Add Month
-                                    </button>
+                                    {comparisonMode === 'weekly' && (
+                                        <div className="flex items-center gap-2">
+                                            <input 
+                                                type="date"
+                                                value={selectedCompareWeekDate}
+                                                onChange={(e) => setSelectedCompareWeekDate(e.target.value)}
+                                                className="bg-bg-dark text-text-main border border-border-main rounded-lg px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer font-semibold"
+                                            />
+                                            <button 
+                                                type="button"
+                                                onClick={handleAddWeek} 
+                                                className="bg-primary hover:bg-primary-hover text-black px-4 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold transition-all cursor-pointer shrink-0 shadow"
+                                            >
+                                                + Add Week
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {comparisonMode === 'monthly' && (
+                                        <div className="flex items-center gap-2">
+                                            <select 
+                                                value={selectedCompareMonth} 
+                                                onChange={(e) => setSelectedCompareMonth(parseInt(e.target.value))} 
+                                                className="bg-bg-dark text-text-main border border-border-main rounded-lg px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer font-semibold"
+                                            >
+                                                {Array.from({ length: 12 }, (_, i) => (
+                                                    <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
+                                                ))}
+                                            </select>
+                                            <select 
+                                                value={selectedCompareYear} 
+                                                onChange={(e) => setSelectedCompareYear(parseInt(e.target.value))} 
+                                                className="bg-bg-dark text-text-main border border-border-main rounded-lg px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer font-semibold"
+                                            >
+                                                <option value="2025">2025</option>
+                                                <option value="2026">2026</option>
+                                                <option value="2027">2027</option>
+                                            </select>
+                                            <button 
+                                                type="button"
+                                                onClick={handleAddMonth} 
+                                                className="bg-primary hover:bg-primary-hover text-black px-4 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold transition-all cursor-pointer shrink-0 shadow"
+                                            >
+                                                + Add Month
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {comparisonMode === 'yearly' && (
+                                        <div className="flex items-center gap-2">
+                                            <select 
+                                                value={selectedCompareYearForYearly} 
+                                                onChange={(e) => setSelectedCompareYearForYearly(parseInt(e.target.value))} 
+                                                className="bg-bg-dark text-text-main border border-border-main rounded-lg px-2.5 py-1.5 outline-none text-xs sm:text-sm cursor-pointer font-semibold"
+                                            >
+                                                <option value="2024">2024</option>
+                                                <option value="2025">2025</option>
+                                                <option value="2026">2026</option>
+                                                <option value="2027">2027</option>
+                                            </select>
+                                            <button 
+                                                type="button"
+                                                onClick={handleAddYear} 
+                                                className="bg-primary hover:bg-primary-hover text-black px-4 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold transition-all cursor-pointer shrink-0 shadow"
+                                            >
+                                                + Add Year
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {comparisonLoading ? (
@@ -902,7 +1095,7 @@ const MonthlyReport = () => {
                                                         {comparisonResults.rows.length === 0 ? (
                                                             <tr>
                                                                 <td colSpan={comparisonResults.monthLabels.length + 1} className="px-5 py-8 text-center text-text-muted italic">
-                                                                    No expenses recorded in the compared months.
+                                                                    No expenses recorded in the compared periods.
                                                                 </td>
                                                             </tr>
                                                         ) : (

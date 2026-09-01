@@ -25,6 +25,36 @@ const Dashboard = () => {
         }
     }, [location.search]);
 
+    const handlePrevDay = () => {
+        if (!date) return;
+        const parts = date.split('-');
+        if (parts.length !== 3) return;
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        d.setDate(d.getDate() - 1);
+        const yStr = d.getFullYear();
+        const mStr = String(d.getMonth() + 1).padStart(2, '0');
+        const dStr = String(d.getDate()).padStart(2, '0');
+        setDate(`${yStr}-${mStr}-${dStr}`);
+    };
+
+    const handleNextDay = () => {
+        if (!date) return;
+        const parts = date.split('-');
+        if (parts.length !== 3) return;
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        d.setDate(d.getDate() + 1);
+        const yStr = d.getFullYear();
+        const mStr = String(d.getMonth() + 1).padStart(2, '0');
+        const dStr = String(d.getDate()).padStart(2, '0');
+        setDate(`${yStr}-${mStr}-${dStr}`);
+    };
+
     const fetchReport = useCallback(async () => {
         setLoading(true);
         try {
@@ -117,17 +147,42 @@ const Dashboard = () => {
                 </div>
                 
                 <div className="flex gap-2 items-center w-full sm:w-auto">
-                    <input 
-                        type="date" 
-                        value={date} 
-                        onChange={(e) => setDate(e.target.value)} 
-                        className="flex-1 sm:flex-initial bg-card-dark text-text-main border border-border-main rounded-xl px-4 py-2.5 outline-none focus:border-primary cursor-pointer text-sm font-semibold select-none shadow"
-                    />
+                    {/* Date selector with Previous/Next Day navigation */}
+                    <div className="flex-1 sm:flex-initial flex items-center gap-1 bg-card-dark border border-border-main rounded-xl p-1 shadow focus-within:border-primary">
+                        <button
+                            type="button"
+                            onClick={handlePrevDay}
+                            className="p-2 rounded-lg bg-bg-dark/80 hover:bg-bg-dark text-text-main hover:text-primary transition-all cursor-pointer flex items-center justify-center text-xs font-bold shrink-0 select-none active:scale-95 border border-border-main/50"
+                            title="Previous Day"
+                            aria-label="Previous Day"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <input 
+                            type="date" 
+                            value={date} 
+                            onChange={(e) => setDate(e.target.value)} 
+                            className="w-full bg-transparent border-0 outline-none text-text-main text-xs sm:text-sm font-semibold cursor-pointer text-center px-1 min-w-[110px]"
+                        />
+                        <button
+                            type="button"
+                            onClick={handleNextDay}
+                            className="p-2 rounded-lg bg-bg-dark/80 hover:bg-bg-dark text-text-main hover:text-primary transition-all cursor-pointer flex items-center justify-center text-xs font-bold shrink-0 select-none active:scale-95 border border-border-main/50"
+                            title="Next Day"
+                            aria-label="Next Day"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
                     
                     {/* Add Transaction Button for Desktop */}
                     <button 
                         onClick={() => { setEditingTransaction(null); setShowForm(true); }}
-                        className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-black font-bold px-4 py-2.5 rounded-xl shadow-lg transition-transform active:scale-95 cursor-pointer text-sm"
+                        className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-black font-bold px-4 py-2.5 rounded-xl shadow-lg transition-transform active:scale-95 cursor-pointer text-sm shrink-0"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />

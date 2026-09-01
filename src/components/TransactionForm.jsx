@@ -241,6 +241,36 @@ const TransactionForm = ({
         }
     }, [formData.fund, funds, isFundDropdownOpen]);
 
+    const handlePrevDay = () => {
+        if (!formData.date) return;
+        const parts = formData.date.split('-');
+        if (parts.length !== 3) return;
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        d.setDate(d.getDate() - 1);
+        const yStr = d.getFullYear();
+        const mStr = String(d.getMonth() + 1).padStart(2, '0');
+        const dStr = String(d.getDate()).padStart(2, '0');
+        setFormData(prev => ({ ...prev, date: `${yStr}-${mStr}-${dStr}` }));
+    };
+
+    const handleNextDay = () => {
+        if (!formData.date) return;
+        const parts = formData.date.split('-');
+        if (parts.length !== 3) return;
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        d.setDate(d.getDate() + 1);
+        const yStr = d.getFullYear();
+        const mStr = String(d.getMonth() + 1).padStart(2, '0');
+        const dStr = String(d.getDate()).padStart(2, '0');
+        setFormData(prev => ({ ...prev, date: `${yStr}-${mStr}-${dStr}` }));
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         if (name === 'transaction_type') {
@@ -574,20 +604,42 @@ const TransactionForm = ({
             )}
            
             <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 items-stretch sm:items-end">
-                {/* Date */}
-                {(prefillDebt || prefillEvent || ['DEBT_TAKEN_RETURN', 'DEBT_GIVEN_RETURN', 'FUND_CREDIT', 'FUND_EXPENSE'].includes(formData.transaction_type)) && (
-                    <div className="w-full sm:w-[calc(50%-8px)] md:w-auto md:min-w-[130px]">
-                        <label className="block text-xs text-text-muted mb-1 font-semibold uppercase tracking-wider">Date</label>
+                {/* Date with Prev / Next Navigation Controls */}
+                <div className="w-full sm:w-[calc(50%-8px)] md:w-auto md:min-w-[210px]">
+                    <label className="block text-xs text-text-muted mb-1 font-semibold uppercase tracking-wider">Date</label>
+                    <div className="flex items-center gap-1 bg-bg-dark border border-border-main rounded-xl p-1 focus-within:border-primary">
+                        <button
+                            type="button"
+                            onClick={handlePrevDay}
+                            className="p-1.5 sm:px-2 rounded-lg bg-card-dark/80 hover:bg-card-dark text-text-main hover:text-primary transition-all cursor-pointer flex items-center justify-center text-xs font-bold shrink-0 select-none active:scale-95 border border-border-main/50"
+                            title="Previous Day"
+                            aria-label="Previous Day"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
                         <input 
                             type="date" 
                             name="date" 
                             value={formData.date} 
                             onChange={handleChange}
                             required
-                            className="w-full bg-bg-dark border border-border-main rounded-xl px-3 py-2 focus:border-primary outline-none text-text-main text-sm cursor-pointer"
+                            className="w-full bg-transparent border-0 outline-none text-text-main text-xs sm:text-sm font-semibold cursor-pointer text-center px-1 min-w-[110px]"
                         />
+                        <button
+                            type="button"
+                            onClick={handleNextDay}
+                            className="p-1.5 sm:px-2 rounded-lg bg-card-dark/80 hover:bg-card-dark text-text-main hover:text-primary transition-all cursor-pointer flex items-center justify-center text-xs font-bold shrink-0 select-none active:scale-95 border border-border-main/50"
+                            title="Next Day"
+                            aria-label="Next Day"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
                     </div>
-                )}
+                </div>
 
                 {/* Amount */}
                 <div className="w-full sm:w-[calc(50%-8px)] md:flex-1 md:min-w-[110px]">
