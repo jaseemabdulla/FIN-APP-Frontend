@@ -247,30 +247,67 @@ const Dashboard = () => {
             ) : report ? (
                 <>
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 animate-fade-in">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4 animate-fade-in">
                         <SummaryCard 
-                            title="Opening Balance" 
+                            title="Personal Opening" 
                             value={report.opening_balance.total} 
-                            sub={`Cash: ${report.opening_balance.cash} | Acc: ${report.opening_balance.account}`} 
+                            sub={`Cash: ₹${parseFloat(report.opening_balance.cash || 0).toLocaleString()} | Acc: ₹${parseFloat(report.opening_balance.account || 0).toLocaleString()}`} 
                             variant="opening"
                         />
                         <SummaryCard 
-                            title="Income" 
+                            title="Personal Income" 
                             value={report.total_income} 
                             variant="income"
                         />
                         <SummaryCard 
-                            title="Expense" 
+                            title="Personal Expense" 
                             value={report.total_expense} 
                             variant="expense"
                         />
                         <SummaryCard 
-                            title="Closing Balance" 
+                            title="Personal Closing" 
                             value={report.closing_balance.total} 
-                            sub={`Cash: ${report.closing_balance.cash} | Acc: ${report.closing_balance.account}`} 
+                            sub={`Cash: ₹${parseFloat(report.closing_balance.cash || 0).toLocaleString()} | Acc: ₹${parseFloat(report.closing_balance.account || 0).toLocaleString()}`} 
                             variant="closing"
                         />
                     </div>
+
+                    {/* Fund Management Balance Section */}
+                    {report.fund_summary && (
+                        <div className="bg-gradient-to-r from-purple-900/20 via-indigo-900/20 to-purple-950/30 border border-purple-500/30 rounded-2xl p-4 sm:p-5 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-lg animate-fade-in">
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-2xl shrink-0">
+                                    🏢
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h4 className="text-xs sm:text-sm font-extrabold text-purple-400 uppercase tracking-wider">Fund Management Balance</h4>
+                                        <span className="text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full">
+                                            External Funds
+                                        </span>
+                                    </div>
+                                    <div className="text-xl sm:text-2xl font-black text-text-main mt-0.5">
+                                        ₹{parseFloat(report.fund_summary.remaining_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    </div>
+                                    <div className="text-xs text-text-muted mt-1 font-semibold flex flex-wrap gap-x-4 gap-y-1">
+                                        <span>Cash: <strong className="text-text-main">₹{parseFloat(report.fund_summary.cash_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong></span>
+                                        <span>Account: <strong className="text-text-main">₹{parseFloat(report.fund_summary.account_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong></span>
+                                        <span className="hidden md:inline">| Received: ₹{parseFloat(report.fund_summary.total_received || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        <span className="hidden md:inline">| Spent: ₹{parseFloat(report.fund_summary.total_spent || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => navigate('/funds')}
+                                className="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow transition-transform active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                            >
+                                <span>Manage Funds</span>
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
 
                     {/* Transactions Header */}
                     <div className="flex items-center justify-between mb-4 animate-fade-in">

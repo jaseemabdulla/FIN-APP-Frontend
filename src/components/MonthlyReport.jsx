@@ -498,6 +498,32 @@ const MonthlyReport = () => {
                         </div>
                     </div>
 
+                    {/* Available Balances Overview */}
+                    <div className="space-y-3 pt-2 animate-fade-in">
+                        <h4 className="text-[10px] sm:text-xs font-black text-text-muted uppercase tracking-widest">Available Balances Overview</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Personal Closing Balance */}
+                            <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 shadow-md">
+                                <h3 className="text-text-muted mb-1.5 uppercase text-[10px] tracking-wider font-bold">Personal Available Balance</h3>
+                                <p className="text-xl sm:text-2xl font-black text-primary">₹{parseFloat(report.remaining_amount || 0).toLocaleString()}</p>
+                                <span className="text-xs text-text-muted block mt-1 font-semibold">
+                                    Cash: ₹{parseFloat(report.remaining_cash || 0).toLocaleString()} | Acc: ₹{parseFloat(report.remaining_account || 0).toLocaleString()}
+                                </span>
+                            </div>
+
+                            {/* Fund Management Balance */}
+                            {report.fund_summary && (
+                                <div className="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/30 shadow-md">
+                                    <h3 className="text-purple-400 mb-1.5 uppercase text-[10px] tracking-wider font-bold">Fund Management Balance</h3>
+                                    <p className="text-xl sm:text-2xl font-black text-purple-300">₹{parseFloat(report.fund_summary.remaining_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                    <span className="text-xs text-text-muted block mt-1 font-semibold">
+                                        Cash: ₹{parseFloat(report.fund_summary.cash_balance || 0).toLocaleString()} | Acc: ₹{parseFloat(report.fund_summary.account_balance || 0).toLocaleString()}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Financial Breakdowns & Audits Section */}
                     <div className="space-y-4 pt-4">
                         {/* Segmented Control / Tab Bar */}
